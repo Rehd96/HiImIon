@@ -32,9 +32,14 @@ def about(request):
     })
 
 
+# This is the ONLY robots.txt on labustagialla.it — crawlers read it at the
+# domain root, and the root belongs to this app. The blog (writerblog, mounted
+# at /blog/) deliberately serves none of its own, so its policy has to live
+# here; its content is gated, and it must stay out of search results.
 ROBOTS = """User-agent: *
 Disallow: /panel/
 Disallow: /django-admin/
+Disallow: /blog/
 
 # No thanks.
 User-agent: GPTBot

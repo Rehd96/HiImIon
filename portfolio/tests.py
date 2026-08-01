@@ -39,6 +39,8 @@ class PublicSiteTests(TestCase):
         robots = self.client.get('/robots.txt')
         self.assertEqual(robots['Content-Type'], 'text/plain')
         self.assertContains(robots, 'Disallow: /panel/')
+        # The blog serves no robots.txt of its own — its policy lives here.
+        self.assertContains(robots, 'Disallow: /blog/')
 
 
 class PageViewLoggingTests(TestCase):
