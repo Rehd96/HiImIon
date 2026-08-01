@@ -167,13 +167,37 @@ cd /root/writerblog
 source venv/bin/activate
 git pull
 
-4b. MIGRATION CONFLICT — diagnose before doing anything.
+4b. MIGRATION CONFLICT — "multiple leaf nodes in the migration graph".
 
-If migrate reports "multiple leaf nodes in the migration graph", the VPS has
-migration files that were generated here and never committed, so the server's
-history diverged from the repo. DO NOT run "makemigrations --merge" on the
-VPS: it writes yet another file that exists only here and the next git pull
-will refuse to overwrite it. Collect this and send it over:
+DO NOT run "makemigrations --merge" on the VPS. It writes yet another file
+that exists only here, deepening the divergence, and the next git pull will
+refuse to overwrite it.
+
+DIAGNOSED STATE OF THIS BOX (2026-08-02), for reference:
+
+  repo history is LINEAR:  0001 → 0002 → 0003_access_log → 0004_membership
+                           (0003_access_log creates BOTH AccessLog and
+                            ActivityLog)
+
+  VPS has two extra UNTRACKED files, both applied:
+      0003_activitylog.py
+      0004_merge_0003_access_log_0003_activitylog.py
+
+  applied: 0001, 0002, 0003_activitylog, 0003_access_log, the merge
+  pending: 0004_membership   (depends on 0003_access_log, which IS applied)
+  tables:  blog_category, blog_sitesettings, blog_article, blog_book,
+           blog_accesslog, blog_activitylog     — no blog_membership yet
+
+  django_migrations ids jump 19 → 21, so a row was deleted by hand once.
+  That is how 0003_access_log got recorded as applied even though
+  blog_activitylog already existed — it would otherwise have failed with
+  "table already exists".
+
+  Verdict: the server is ahead of git only in BOOKKEEPING. The tables on disk
+  are exactly what the repo's linear history produces. So reconverge the
+  server onto the repo instead of importing its artifacts into git forever.
+
+Re-run the diagnostic if the box has changed since:
 
 cd /root/writerblog && source venv/bin/activate
 echo "=== migration files ==="; ls blog/migrations/
@@ -186,17 +210,80 @@ echo "=== blog tables ==="; python -c "
 import sqlite3; c=sqlite3.connect('db.sqlite3')
 print([r[0] for r in c.execute(\"select name from sqlite_master where type='table' and name like 'blog_%'\")])"
 
-Context for reading it: in the repo the history is LINEAR —
-0001 → 0002 → 0003_access_log (creates BOTH AccessLog and ActivityLog) →
-0004_membership. Any 0003_activitylog or 0004_merge_* file is VPS-only.
 
-  - blog_activitylog exists AND the merge is applied → server is ahead of git.
-    Fix: bring the two VPS files into the repo, generate the merge on the
-    laptop, commit, pull. History reconverges, nothing re-runs.
-  - the files exist but were never applied → delete the untracked ones and let
-    the repo's linear history apply cleanly.
-  - 0003_access_log applied but blog_activitylog missing → faked/partial state,
-    needs --fake on specific rows. Do not improvise this one.
+4b-i. VERIFY THE SCHEMA FIRST.
+
+blog_activitylog was created by the VPS-only 0003_activitylog, NOT by the
+repo's 0003_access_log. Before telling Django the repo's version is the one
+that ran, confirm the table really matches the model:
+
+cd /root/writerblog && source venv/bin/activate
+echo "=== blog_activitylog ==="; python -c "
+import sqlite3; c=sqlite3.connect('db.sqlite3')
+for r in c.execute('PRAGMA table_info(blog_activitylog)'): print(r)"
+echo "=== blog_accesslog ==="; python -c "
+import sqlite3; c=sqlite3.connect('db.sqlite3')
+for r in c.execute('PRAGMA table_info(blog_accesslog)'): print(r)"
+
+EXPECTED for blog_activitylog — id, action varchar(10), model_name
+varchar(30), object_title varchar(250), timestamp datetime, user_id (nullable
+FK). If the columns match, use FIX A. If anything differs, STOP and use
+FIX B instead — a mismatch means Django's recorded state would be a lie and
+the next migration to touch that model will fail in a confusing way.
+
+
+4b-ii. FIX A — reconverge on the repo's linear history (no schema change)
+
+Requires the STEP 0 backup. Confirm it exists; the next command writes to
+django_migrations:
+
+ls -la /root/writerblog-db.bak-*        # must list at least one file
+
+cd /root/writerblog && source venv/bin/activate
+
+# 1. Move the untracked files out of the tree — keep them, do not delete.
+mkdir -p /root/writerblog-vps-only-migrations
+mv blog/migrations/0003_activitylog.py \
+   blog/migrations/0004_merge_0003_access_log_0003_activitylog.py \
+   /root/writerblog-vps-only-migrations/
+rm -rf blog/migrations/__pycache__
+ls /root/writerblog-vps-only-migrations/
+
+# 2. Drop their bookkeeping rows. Pure metadata — the files backing them are
+#    gone, and no table is touched.
+python -c "
+import sqlite3
+c = sqlite3.connect('db.sqlite3'); cur = c.cursor()
+cur.execute(\"delete from django_migrations where app='blog' and name in ('0003_activitylog','0004_merge_0003_access_log_0003_activitylog')\")
+print('deleted', cur.rowcount, 'rows (expected 2)')
+c.commit()"
+
+# 3. The graph now has ONE leaf. Only 0004_membership should be pending.
+python manage.py showmigrations blog
+
+CHECK before migrating:
+  [X] 0001_initial
+  [X] 0002_book
+  [X] 0003_access_log
+  [ ] 0004_membership     ← the only unapplied one, and the only leaf
+  No 0003_activitylog or 0004_merge_* lines at all.
+
+If that is what you see, continue to 4c. If not, restore and stop:
+  cp /root/writerblog-db.bak-<timestamp>.sqlite3 /root/writerblog/db.sqlite3
+  mv /root/writerblog-vps-only-migrations/*.py /root/writerblog/blog/migrations/
+
+
+4b-iii. FIX B — only if the schema did NOT match
+
+Do not improvise. Send me the output of 4b-i plus:
+
+cat /root/writerblog/blog/migrations/0003_activitylog.py
+cat /root/writerblog/blog/migrations/0004_merge_0003_access_log_0003_activitylog.py
+
+The fix is then to bring both files into the repo on the laptop, generate a
+proper 0005 merge there, commit, push, and pull — so the graph converges with
+the server's real schema preserved rather than overwritten.
+
 
 4c. Once the graph is resolved:
 
@@ -319,6 +406,16 @@ Writerblog database damaged by a migration:
     systemctl stop writerblog
     cp /root/writerblog-db.bak-<timestamp>.sqlite3 /root/writerblog/db.sqlite3
     systemctl start writerblog
+
+FIX A went wrong — put the migration graph back exactly as it was:
+    systemctl stop writerblog
+    cp /root/writerblog-db.bak-<timestamp>.sqlite3 /root/writerblog/db.sqlite3
+    mv /root/writerblog-vps-only-migrations/*.py /root/writerblog/blog/migrations/
+    rm -rf /root/writerblog/blog/migrations/__pycache__
+    systemctl start writerblog
+    (the db backup restores the two django_migrations rows, and the mv restores
+     the files that back them — the two must go back together or the graph
+     will not match)
 
 Take the portfolio down entirely:
     sudo systemctl stop hiimion && sudo systemctl disable hiimion
