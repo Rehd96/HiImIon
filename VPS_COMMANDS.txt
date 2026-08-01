@@ -211,55 +211,51 @@ import sqlite3; c=sqlite3.connect('db.sqlite3')
 print([r[0] for r in c.execute(\"select name from sqlite_master where type='table' and name like 'blog_%'\")])"
 
 
-4b-i. VERIFY THE SCHEMA FIRST.
+4b-i. CONFIRMED (2026-08-02): the two VPS-only files were inspected.
 
-blog_activitylog was created by the VPS-only 0003_activitylog, NOT by the
-repo's 0003_access_log. Before telling Django the repo's version is the one
-that ran, confirm the table really matches the model:
+  0003_activitylog.py creates ActivityLog with field-for-field IDENTICAL
+  definitions to the ActivityLog block inside the repo's 0003_access_log
+  (action varchar(10) + same choices, model_name varchar(30), object_title
+  varchar(250), timestamp auto_now_add, user FK null=True SET_NULL, ordering
+  ['-timestamp']).
 
-cd /root/writerblog && source venv/bin/activate
-echo "=== blog_activitylog ==="; python -c "
-import sqlite3; c=sqlite3.connect('db.sqlite3')
-for r in c.execute('PRAGMA table_info(blog_activitylog)'): print(r)"
-echo "=== blog_accesslog ==="; python -c "
-import sqlite3; c=sqlite3.connect('db.sqlite3')
-for r in c.execute('PRAGMA table_info(blog_accesslog)'): print(r)"
+  0004_merge_… has operations = [] — a pure graph join, no schema effect.
 
-EXPECTED for blog_activitylog — id, action varchar(10), model_name
-varchar(30), object_title varchar(250), timestamp datetime, user_id (nullable
-FK). If the columns match, use FIX A. If anything differs, STOP and use
-FIX B instead — a mismatch means Django's recorded state would be a lie and
-the next migration to touch that model will fail in a confusing way.
+  So the table on disk is exactly what the repo's history produces.
+  => FIX A applies. FIX B is not needed on this box.
 
 
 4b-ii. FIX A — reconverge on the repo's linear history (no schema change)
 
-Requires the STEP 0 backup. Confirm it exists; the next command writes to
-django_migrations:
+Paste as ONE block. It is a && chain with two guards: it stops before
+mutating anything if the STEP 0 backup is missing, or if blog_activitylog's
+columns are not exactly what the model expects. Both guards were tested
+against a deliberately mismatched database — nothing is touched when they fire.
 
-ls -la /root/writerblog-db.bak-*        # must list at least one file
-
-cd /root/writerblog && source venv/bin/activate
-
-# 1. Move the untracked files out of the tree — keep them, do not delete.
-mkdir -p /root/writerblog-vps-only-migrations
+cd /root/writerblog && source venv/bin/activate && \
+ls /root/writerblog-db.bak-*.sqlite3 >/dev/null 2>&1 && echo "guard 1: backup ok" && \
+python -c "
+import sqlite3,sys
+c=sqlite3.connect('db.sqlite3')
+cols={r[1] for r in c.execute('PRAGMA table_info(blog_activitylog)')}
+exp={'id','action','model_name','object_title','timestamp','user_id'}
+print('columns:',sorted(cols))
+sys.exit(0 if cols==exp else 1)" && echo "guard 2: schema ok" && \
+mkdir -p /root/writerblog-vps-only-migrations && \
 mv blog/migrations/0003_activitylog.py \
    blog/migrations/0004_merge_0003_access_log_0003_activitylog.py \
-   /root/writerblog-vps-only-migrations/
-rm -rf blog/migrations/__pycache__
-ls /root/writerblog-vps-only-migrations/
-
-# 2. Drop their bookkeeping rows. Pure metadata — the files backing them are
-#    gone, and no table is touched.
+   /root/writerblog-vps-only-migrations/ && \
+rm -rf blog/migrations/__pycache__ && \
 python -c "
 import sqlite3
-c = sqlite3.connect('db.sqlite3'); cur = c.cursor()
+c=sqlite3.connect('db.sqlite3');cur=c.cursor()
 cur.execute(\"delete from django_migrations where app='blog' and name in ('0003_activitylog','0004_merge_0003_access_log_0003_activitylog')\")
-print('deleted', cur.rowcount, 'rows (expected 2)')
-c.commit()"
-
-# 3. The graph now has ONE leaf. Only 0004_membership should be pending.
+print('deleted',cur.rowcount,'rows (expected 2)')
+c.commit()" && \
 python manage.py showmigrations blog
+
+If "guard 1" does not print, run the STEP 0 backup first.
+If "guard 2" does not print, STOP and use FIX B.
 
 CHECK before migrating:
   [X] 0001_initial
