@@ -16,17 +16,36 @@ find out with zero visitor impact.
  STEP 1 — PRE-FLIGHT (read-only, changes nothing)
 ───────────────────────────────────────────────────────────────────────────
 
+Note: use grep -R (capital), NOT -r. /etc/nginx/sites-enabled/ is full of
+symlinks into sites-available, and lowercase -r silently skips them — it will
+tell you there is no config at all while nginx is happily serving.
+
+Do not put "!!" inside a double-quoted echo in an interactive shell either;
+bash history-expands it into your previous command.
+
 echo "=== who/where ==="; whoami; echo "HOME=$HOME"
 echo "=== is 8010 free? ==="; ss -tlnp | grep -E ':(8010|8000|8080|3000|3001|4000)\b' || echo "all free"
 echo "=== what serves / today? ==="; curl -sI https://labustagialla.it/ | head -3
-echo "=== nginx files for the domain ==="; grep -rl "labustagialla" /etc/nginx/sites-enabled/ /etc/nginx/conf.d/ 2>/dev/null
-echo "=== existing location prefixes ==="; grep -rhE "^[[:space:]]*location " /etc/nginx/sites-enabled/ 2>/dev/null | sed 's/^[[:space:]]*//' | sort -u
-echo "=== tooling ==="; python3 --version; python3 -m venv --help >/dev/null 2>&1 && echo "venv ok" || echo "!! apt install python3-venv"; nginx -v 2>&1
+echo "=== tooling ==="; python3 --version; python3 -m venv --help >/dev/null 2>&1 && echo "venv ok" || echo "MISSING - run: apt install python3-venv"; nginx -v 2>&1
+
+Then map the nginx config. "nginx -T" prints the FULL resolved config,
+following every include and symlink — it is the only answer you can trust:
+
+echo "=== which file holds the labustagialla server block? ==="
+sudo nginx -T 2>/dev/null | grep -E "^# configuration file|server_name" | grep -B1 labustagialla
+echo "=== all server blocks ==="
+sudo nginx -T 2>/dev/null | grep -E "^# configuration file|server_name |listen " | sed 's/^[[:space:]]*//'
+echo "=== every location + what it proxies to ==="
+sudo nginx -T 2>/dev/null | grep -E "^[[:space:]]*(location|proxy_pass|root|alias) " | sed 's/^[[:space:]]*//'
+echo "=== sites-enabled symlinks ==="
+ls -la /etc/nginx/sites-enabled/
 
 CHECK:
   - 8010 must NOT appear in the port list.
+  - You must be able to name the ONE file containing the server block that
+    answers for labustagialla.it. If no server_name matches the domain, it is
+    being served by the default_server block — see the note in STEP 5c.
   - Note what currently answers at / — STEP 5 replaces it.
-  - If "!! apt install python3-venv" appears:  sudo apt install -y python3-venv
 
 
 ───────────────────────────────────────────────────────────────────────────
@@ -210,7 +229,28 @@ CHECK: the alias line shows YOUR real path ending in /HiImIon/staticfiles/
 5c. NOW EDIT BY HAND — this part I cannot script safely, because it depends
     on how your existing server block is written:
 
-sudo nano /etc/nginx/sites-enabled/<the file STEP 1 named>
+sudo nano <the file STEP 1 named>
+
+    IF NO server_name MATCHED labustagialla.it in STEP 1, the domain is being
+    caught by the default_server block. Editing that block changes what EVERY
+    unmatched hostname on this box gets, which is broader than you want. In
+    that case add a dedicated block instead:
+
+        server {
+            listen 443 ssl;
+            server_name labustagialla.it www.labustagialla.it;
+            ssl_certificate     /etc/letsencrypt/live/<cert>/fullchain.pem;
+            ssl_certificate_key /etc/letsencrypt/live/<cert>/privkey.pem;
+
+            # copy the existing /cff, /fai, /ezbk location blocks in here too,
+            # or they stop working the moment this block starts matching
+            include /etc/nginx/snippets/portfolio.conf;
+        }
+
+    A named server_name always beats default_server, so this takes over the
+    domain cleanly and leaves every other site on the box untouched.
+    Send me the STEP 1 output before doing this — the certificate path and
+    which blocks to copy depend on what is already there.
 
     Inside the  server { listen 443 ssl; server_name labustagialla.it; }  block:
       - find the EXISTING  location / { ... }  block and DELETE or comment it
