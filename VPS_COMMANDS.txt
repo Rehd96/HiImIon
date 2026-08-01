@@ -1,66 +1,61 @@
 ═══════════════════════════════════════════════════════════════════════════
- labustagialla.it portfolio — VPS deploy cheat-sheet
- Copy-paste one STEP at a time. Read the CHECK line after each before moving on.
+ labustagialla.it — deploy cheat-sheet
+ Portfolio takes /, writerblog moves to /blog/. Copy-paste ONE STEP at a time
+ and read the CHECK line before moving on.
 ═══════════════════════════════════════════════════════════════════════════
 
-Every command derives its paths from $HOME and $(whoami), so this works
-whether you deploy as root (/root/HiImIon) or as a normal user. Nothing is
-hard-coded — do not edit paths by hand.
+FINAL TOPOLOGY
 
-The app is fully running and health-checked on localhost (STEP 4) BEFORE
-nginx sends it a single public request (STEP 5). If something is wrong you
-find out with zero visitor impact.
+  /                       portfolio      127.0.0.1:8010   (HiImIon)
+  /static/ /panel/        portfolio      127.0.0.1:8010
+  /django-admin/          portfolio      127.0.0.1:8010   (localhost only)
+  /robots.txt             portfolio      — carries Disallow: /blog/
+  /blog/                  writerblog     127.0.0.1:8000
+  /blog/static/           writerblog     alias /root/writerblog/staticfiles/
+  /blog/media/            writerblog     PROXIED, never aliased (gated uploads)
+  /blog/panel/            writerblog     127.0.0.1:8000
+  /ezbk/                  ezBookkeeping  127.0.0.1:8080   (unchanged)
+  /cff/…                  festival       fest_web/fest_api (unchanged)
 
+Confirmed on this box already:
+  - running as root, HOME=/root, so the app lands at /root/HiImIon
+  - port 8010 is free; 3000/3001/8000/8080/4000 are taken
+  - the server block lives in /etc/nginx/sites-available/writerblog
+    (symlinked from sites-enabled), cert /etc/letsencrypt/live/labustagialla.it/
+  - rate-limit zones wb_auth and wb_global already exist and are reused
 
-───────────────────────────────────────────────────────────────────────────
- STEP 1 — PRE-FLIGHT (read-only, changes nothing)
-───────────────────────────────────────────────────────────────────────────
-
-Note: use grep -R (capital), NOT -r. /etc/nginx/sites-enabled/ is full of
-symlinks into sites-available, and lowercase -r silently skips them — it will
-tell you there is no config at all while nginx is happily serving.
-
-Do not put "!!" inside a double-quoted echo in an interactive shell either;
-bash history-expands it into your previous command.
-
-echo "=== who/where ==="; whoami; echo "HOME=$HOME"
-echo "=== is 8010 free? ==="; ss -tlnp | grep -E ':(8010|8000|8080|3000|3001|4000)\b' || echo "all free"
-echo "=== what serves / today? ==="; curl -sI https://labustagialla.it/ | head -3
-echo "=== tooling ==="; python3 --version; python3 -m venv --help >/dev/null 2>&1 && echo "venv ok" || echo "MISSING - run: apt install python3-venv"; nginx -v 2>&1
-
-Then map the nginx config. "nginx -T" prints the FULL resolved config,
-following every include and symlink — it is the only answer you can trust:
-
-echo "=== which file holds the labustagialla server block? ==="
-sudo nginx -T 2>/dev/null | grep -E "^# configuration file|server_name" | grep -B1 labustagialla
-echo "=== all server blocks ==="
-sudo nginx -T 2>/dev/null | grep -E "^# configuration file|server_name |listen " | sed 's/^[[:space:]]*//'
-echo "=== every location + what it proxies to ==="
-sudo nginx -T 2>/dev/null | grep -E "^[[:space:]]*(location|proxy_pass|root|alias) " | sed 's/^[[:space:]]*//'
-echo "=== sites-enabled symlinks ==="
-ls -la /etc/nginx/sites-enabled/
-
-CHECK:
-  - 8010 must NOT appear in the port list.
-  - You must be able to name the ONE file containing the server block that
-    answers for labustagialla.it. If no server_name matches the domain, it is
-    being served by the default_server block — see the note in STEP 5c.
-  - Note what currently answers at / — STEP 5 replaces it.
+ORDER MATTERS. STEP 2 and 3 are invisible to visitors — the portfolio runs on
+localhost with nothing routed to it. STEP 4 must finish before STEP 5, or
+/blog/ will proxy to an app that still only answers on /.
 
 
 ───────────────────────────────────────────────────────────────────────────
- STEP 2 — BACK UP THE CURRENT NGINX CONFIG (do not skip)
+ STEP 0 — BACKUPS. DO NOT SKIP.
 ───────────────────────────────────────────────────────────────────────────
 
-sudo cp -r /etc/nginx/sites-enabled "/root/nginx-backup-$(date +%F-%H%M)"
-sudo cp -r /etc/nginx/sites-available "/root/nginx-backup-available-$(date +%F-%H%M)"
-ls -d /root/nginx-backup-*
+cp /root/writerblog/db.sqlite3 "/root/writerblog-db.bak-$(date +%F-%H%M).sqlite3"
+sudo cp /etc/nginx/sites-available/writerblog "/root/writerblog-nginx.bak-$(date +%F-%H%M)"
+ls -la /root/writerblog-db.bak-* /root/writerblog-nginx.bak-*
 
-CHECK: at least one backup directory is listed. This is your undo for STEP 5.
+CHECK: two files listed. The .sqlite3 is the writer's actual content and the
+nginx file is your one-command undo for STEP 5.
 
 
 ───────────────────────────────────────────────────────────────────────────
- STEP 3 — CLONE AND SET UP
+ STEP 1 — PRE-FLIGHT (already done; re-run only if the box changed)
+───────────────────────────────────────────────────────────────────────────
+
+Use grep -R (capital), never -r: sites-enabled is symlinks and lowercase -r
+skips them silently. Do not put "!!" in a double-quoted echo — bash history
+expansion mangles the line.
+
+echo "=== is 8010 free? ==="; ss -tlnp | grep -E ':(8010)\b' || echo "8010 free"
+echo "=== nginx map ==="; sudo nginx -T 2>/dev/null | grep -E "^# configuration file|server_name |listen " | sed 's/^[[:space:]]*//'
+echo "=== locations ==="; sudo nginx -T 2>/dev/null | grep -E "^[[:space:]]*(location|proxy_pass|alias) " | sed 's/^[[:space:]]*//'
+
+
+───────────────────────────────────────────────────────────────────────────
+ STEP 2 — PORTFOLIO: CLONE AND SET UP  (invisible to visitors)
 ───────────────────────────────────────────────────────────────────────────
 
 cd "$HOME"
@@ -72,7 +67,7 @@ python3 -m venv venv
 ./venv/bin/pip install -q -r requirements.txt
 ./venv/bin/python -c "import django; print('django', django.get_version())"
 
-Now write .env with a REAL generated secret key (this block does it for you):
+Write .env with a REAL generated secret key:
 
 cd "$HOME/HiImIon"
 SECRET="$(./venv/bin/python -c 'from django.core.management.utils import get_random_secret_key as k; print(k())')"
@@ -86,9 +81,8 @@ DJANGO_HSTS_SECONDS=0
 PAGEVIEW_RETENTION_DAYS=400
 EOF
 chmod 600 .env
-grep -c SECRET_KEY .env
 
-Then migrate, collect static, and create YOUR panel login:
+Migrate, collect static, create your panel login:
 
 cd "$HOME/HiImIon"
 set -a; . ./.env; set +a
@@ -97,20 +91,19 @@ set -a; . ./.env; set +a
 ./venv/bin/python manage.py createsuperuser
 
 CHECK:
-  - "django 5.1.5" printed.
-  - grep printed 1  (the .env exists and has a key).
-  - createsuperuser: pick a STRONG password. This is your /panel/ login,
-    it is exposed to the internet, and it is rate-limited to 5 tries/min
-    but that is not a substitute for a good password.
+  - "django 5.1.5" printed
+  - createsuperuser: STRONG password. This is your /panel/ login, exposed to
+    the internet, rate-limited to a few tries a minute — which is not a
+    substitute for a good password.
 
 
 ───────────────────────────────────────────────────────────────────────────
- STEP 4 — SYSTEMD (app runs on localhost only)
+ STEP 3 — PORTFOLIO: SYSTEMD  (still invisible to visitors)
 ───────────────────────────────────────────────────────────────────────────
 
-This GENERATES the unit file with your real user and paths, so it is correct
-whether you are root or not. Do not use deploy/hiimion.service directly —
-that file assumes the laptop layout.
+Generates the unit from your real user and paths. Do NOT install
+deploy/hiimion.service directly — it assumes the laptop layout and its
+ProtectHome would block SQLite writes under /root.
 
 cd "$HOME/HiImIon"
 APP="$HOME/HiImIon"; RUNAS="$(whoami)"
@@ -145,149 +138,138 @@ sudo systemctl enable --now hiimion
 sleep 2
 systemctl status hiimion --no-pager | head -12
 
-Smoke-test it on localhost BEFORE nginx knows it exists:
+Smoke-test on localhost BEFORE nginx knows it exists:
 
-curl -sI http://127.0.0.1:8010/            | head -1
+curl -sI http://127.0.0.1:8010/             | head -1
 curl -sI http://127.0.0.1:8010/panel/login/ | head -1
+curl -s   http://127.0.0.1:8010/robots.txt  | grep blog
 curl -s   http://127.0.0.1:8010/ | grep -o "<h3 class=\"card-title\">[^<]*" | sed 's/.*>//'
 
 CHECK:
-  - status is "active (running)"
-  - both curls print "HTTP/1.1 200 OK"
-  - the last command lists all SIX project names
+  - status "active (running)"
+  - both curls "HTTP/1.1 200 OK"
+  - robots grep prints "Disallow: /blog/"
+  - the last command lists SIX project names
 
 IF IT FAILED:
   sudo journalctl -u hiimion -n 40 --no-pager
-  Usual causes: missing .env, port 8010 taken, venv path wrong.
-  STOP HERE and send me the journalctl output — do not proceed to STEP 5.
+  Usual causes: missing .env, 8010 taken, venv path wrong.
+  STOP — do not continue to STEP 5.
 
 
 ───────────────────────────────────────────────────────────────────────────
- STEP 5 — NGINX (this is the step that goes public)
+ STEP 4 — WRITERBLOG: MOVE TO /blog/
 ───────────────────────────────────────────────────────────────────────────
 
-5a. Rate-limit zones at http{} scope. Safe to re-run; skips if present.
+4a. Pull the new code:
 
-if grep -q portfolio_login /etc/nginx/conf.d/ratelimits.conf 2>/dev/null; then
-  echo "already present — skipping"
-else
-  sudo tee -a /etc/nginx/conf.d/ratelimits.conf > /dev/null <<'EOF'
-limit_req_zone $binary_remote_addr zone=portfolio_login:10m rate=5r/m;
-limit_req_zone $binary_remote_addr zone=portfolio_all:10m   rate=120r/m;
-EOF
-  echo "zones added"
-fi
+cd /root/writerblog
+source venv/bin/activate
+git pull
 
-5b. Generate the location blocks with YOUR real static path:
+4b. MIGRATION CONFLICT — diagnose before doing anything.
 
-APP="$HOME/HiImIon"
-sudo mkdir -p /etc/nginx/snippets
-sudo tee /etc/nginx/snippets/portfolio.conf > /dev/null <<EOF
-location /static/ {
-    alias $APP/staticfiles/;
-    access_log off;
-    expires 30d;
-    add_header Cache-Control "public, immutable";
-}
+If migrate reports "multiple leaf nodes in the migration graph", the VPS has
+migration files that were generated here and never committed, so the server's
+history diverged from the repo. DO NOT run "makemigrations --merge" on the
+VPS: it writes yet another file that exists only here and the next git pull
+will refuse to overwrite it. Collect this and send it over:
 
-location = /panel/login/ {
-    limit_req zone=portfolio_login burst=3 nodelay;
-    proxy_pass http://127.0.0.1:8010;
-    proxy_set_header Host              \$host;
-    proxy_set_header X-Real-IP         \$remote_addr;
-    proxy_set_header X-Forwarded-For   \$proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto \$scheme;
-}
+cd /root/writerblog && source venv/bin/activate
+echo "=== migration files ==="; ls blog/migrations/
+echo "=== tracked by git? ==="; git status --short blog/migrations/
+echo "=== applied ==="; python manage.py showmigrations blog
+echo "=== django_migrations rows ==="; python -c "
+import sqlite3; c=sqlite3.connect('db.sqlite3')
+for r in c.execute(\"select id,name,applied from django_migrations where app='blog' order by id\"): print(r)"
+echo "=== blog tables ==="; python -c "
+import sqlite3; c=sqlite3.connect('db.sqlite3')
+print([r[0] for r in c.execute(\"select name from sqlite_master where type='table' and name like 'blog_%'\")])"
 
-location /django-admin/ {
-    allow 127.0.0.1;
-    deny all;
-    proxy_pass http://127.0.0.1:8010;
-    proxy_set_header Host              \$host;
-    proxy_set_header X-Real-IP         \$remote_addr;
-    proxy_set_header X-Forwarded-For   \$proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto \$scheme;
-}
+Context for reading it: in the repo the history is LINEAR —
+0001 → 0002 → 0003_access_log (creates BOTH AccessLog and ActivityLog) →
+0004_membership. Any 0003_activitylog or 0004_merge_* file is VPS-only.
 
-location / {
-    limit_req zone=portfolio_all burst=40 nodelay;
-    proxy_pass http://127.0.0.1:8010;
-    proxy_set_header Host              \$host;
-    proxy_set_header X-Real-IP         \$remote_addr;
-    proxy_set_header X-Forwarded-For   \$proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto \$scheme;
-    proxy_redirect off;
-    proxy_connect_timeout 10s;
-    proxy_read_timeout    30s;
-}
-EOF
-grep -E "alias|proxy_pass" /etc/nginx/snippets/portfolio.conf
+  - blog_activitylog exists AND the merge is applied → server is ahead of git.
+    Fix: bring the two VPS files into the repo, generate the merge on the
+    laptop, commit, pull. History reconverges, nothing re-runs.
+  - the files exist but were never applied → delete the untracked ones and let
+    the repo's linear history apply cleanly.
+  - 0003_access_log applied but blog_activitylog missing → faked/partial state,
+    needs --fake on specific rows. Do not improvise this one.
 
-CHECK: the alias line shows YOUR real path ending in /HiImIon/staticfiles/
-       and proxy_pass lines point at 127.0.0.1:8010.
+4c. Once the graph is resolved:
 
-5c. NOW EDIT BY HAND — this part I cannot script safely, because it depends
-    on how your existing server block is written:
+cd /root/writerblog && source venv/bin/activate
+python manage.py migrate --noinput
+python manage.py collectstatic --noinput
+systemctl restart writerblog
+sleep 2
 
-sudo nano <the file STEP 1 named>
+curl -sI http://127.0.0.1:8000/blog/ | head -1
+curl -sI http://127.0.0.1:8000/      | head -1
 
-    IF NO server_name MATCHED labustagialla.it in STEP 1, the domain is being
-    caught by the default_server block. Editing that block changes what EVERY
-    unmatched hostname on this box gets, which is broader than you want. In
-    that case add a dedicated block instead:
+CHECK:
+  - /blog/ → 200
+  - /      → 404   ← this is the important one. It proves the new URL conf is
+                     live and writerblog has stopped claiming the root. If it
+                     returns 200, the old code is still running: STOP, or
+                     STEP 5 will leave the blog fighting the portfolio for /.
 
-        server {
-            listen 443 ssl;
-            server_name labustagialla.it www.labustagialla.it;
-            ssl_certificate     /etc/letsencrypt/live/<cert>/fullchain.pem;
-            ssl_certificate_key /etc/letsencrypt/live/<cert>/privkey.pem;
 
-            # copy the existing /cff, /fai, /ezbk location blocks in here too,
-            # or they stop working the moment this block starts matching
-            include /etc/nginx/snippets/portfolio.conf;
-        }
+───────────────────────────────────────────────────────────────────────────
+ STEP 5 — THE NGINX SWAP  (this is the step that goes public)
+───────────────────────────────────────────────────────────────────────────
 
-    A named server_name always beats default_server, so this takes over the
-    domain cleanly and leaves every other site on the box untouched.
-    Send me the STEP 1 output before doing this — the certificate path and
-    which blocks to copy depend on what is already there.
-
-    Inside the  server { listen 443 ssl; server_name labustagialla.it; }  block:
-      - find the EXISTING  location / { ... }  block and DELETE or comment it
-        (that is whatever serves / today — your backup from STEP 2 has it)
-      - then, AFTER the /cff, /fai and /ezbk blocks, add this ONE line:
-
-            include /etc/nginx/snippets/portfolio.conf;
-
-    Leave the /cff, /fai, /ezbk blocks completely alone.
-
-5d. Test and reload:
-
+cd "$HOME/HiImIon" && git pull
+sudo cp deploy/nginx-labustagialla-merged.conf /etc/nginx/sites-available/writerblog
 sudo nginx -t
+
+CHECK: "syntax is ok" and "test is successful". If not, DO NOT reload — fix it
+or restore from STEP 0. Only then:
+
 sudo systemctl reload nginx
 
-CHECK: "syntax is ok" and "test is successful". If nginx -t fails, DO NOT
-reload — fix it, or restore:  sudo cp -r /root/nginx-backup-*/. /etc/nginx/sites-enabled/
+What that file changes, all on the writerblog side:
+  /static/       → /blog/static/
+  /panel/login/  → /blog/panel/login/
+  /django-admin/ → /blog/django-admin/
+  location /     → location /blog/
+  /media/        → DELETED, not renamed. gate_views.protected_media puts
+                   uploads behind a membership check, so Django must serve
+                   them; an nginx alias hands them to anyone with the URL.
+  + X-Forwarded-Proto on every blog block — writerblog sets
+    SECURE_PROXY_SSL_HEADER but nginx never sent the header, so Django saw
+    every HTTPS request as plain HTTP.
+/ezbk/, the festival include and all TLS directives are unchanged.
 
 
 ───────────────────────────────────────────────────────────────────────────
- STEP 6 — VERIFY EVERYTHING, INCLUDING THE NEIGHBOURS
+ STEP 6 — VERIFY ALL FOUR APPS
 ───────────────────────────────────────────────────────────────────────────
 
 for p in / /about/ /projects/rentwatch/ /projects/castelfidardo-festival/ \
-         /panel/login/ /robots.txt /static/css/site.css /cff/ /fai /ezbk; do
+         /panel/login/ /robots.txt /static/css/site.css \
+         /blog/ /blog/panel/login/ /cff/ /ezbk/; do
   printf '%-42s %s\n' "$p" "$(curl -so /dev/null -w '%{http_code}' "https://labustagialla.it$p")"
 done
 
 CHECK:
-  / /about/ /projects/* /panel/login/ /robots.txt /static/css/site.css  -> 200
-  /cff/ /fai /ezbk                                                      -> 200 or 301/302
-  A 404 on /static/css/site.css means the alias path is wrong (STEP 5b).
-  A 502 on / means gunicorn is not running (back to STEP 4).
+  / /about/ /projects/* /panel/login/ /robots.txt /static/css/site.css → 200
+  /blog/ /blog/panel/login/                                            → 200
+  /cff/ /ezbk/                                                         → 200 or 301/302
 
-Then open https://labustagialla.it/panel/ in a browser and log in with the
-superuser from STEP 3. You should see the dashboard, with your own visit
-NOT counted (panel hits are never logged).
+  404 on /static/css/site.css  → portfolio alias path wrong (STEP 5 file)
+  404 on /blog/                → writerblog still on old code (back to STEP 4c)
+  502 on /                     → gunicorn not running (back to STEP 3)
+
+Then in a browser:
+  https://labustagialla.it/            the portfolio, six project cards
+  https://labustagialla.it/blog/       the writer's site, CSS intact
+  https://labustagialla.it/panel/      log in with the STEP 2 superuser
+
+Confirm the blog's CSS actually loads — a bare unstyled page means
+/blog/static/ is misrouted even though the status code is 200.
 
 
 ───────────────────────────────────────────────────────────────────────────
@@ -297,10 +279,10 @@ NOT counted (panel hits are never logged).
 ( sudo crontab -l 2>/dev/null; echo "17 4 * * * cd $HOME/HiImIon && ./venv/bin/python manage.py prune_views >> /var/log/hiimion-prune.log 2>&1" ) | sudo crontab -
 sudo crontab -l | tail -2
 
-Optional — add to the festival-monitor agent so it watches this app too:
-edit  deploy/monitor-agent/agent-config.json  and add
+Optional — let festival-monitor watch this app too. Add to
+deploy/monitor-agent/agent-config.json:
     { "name": "Portfolio", "url": "http://127.0.0.1:8010/", "expect": 200 }
-then  sudo systemctl restart festival-monitor-agent
+then: sudo systemctl restart festival-monitor-agent
 
 
 ═══════════════════════════════════════════════════════════════════════════
@@ -316,21 +298,28 @@ set -a; . ./.env; set +a
 sudo systemctl restart hiimion
 curl -sI http://127.0.0.1:8010/ | head -1
 
-Content-only change (editing portfolio/projects.py): git pull + restart is enough.
+Content-only change (editing portfolio/projects.py): git pull + restart.
 
 
 ═══════════════════════════════════════════════════════════════════════════
  ROLLBACK
 ═══════════════════════════════════════════════════════════════════════════
 
-Bad code:
+nginx broken, or you want the blog back at / :
+    sudo cp /root/writerblog-nginx.bak-<timestamp> /etc/nginx/sites-available/writerblog
+    sudo nginx -t && sudo systemctl reload nginx
+    (that backup predates the swap, so it restores blog-at-root exactly)
+
+Portfolio code bad:
     cd "$HOME/HiImIon" && git log --oneline -5
     git checkout <previous-sha> && sudo systemctl restart hiimion
-    (the database only holds page views — rolling back is always safe)
+    (its database holds only page views — rolling back is always safe)
 
-Bad nginx / want the old site at / back:
-    sudo cp -r /root/nginx-backup-<timestamp>/. /etc/nginx/sites-enabled/
-    sudo nginx -t && sudo systemctl reload nginx
+Writerblog database damaged by a migration:
+    systemctl stop writerblog
+    cp /root/writerblog-db.bak-<timestamp>.sqlite3 /root/writerblog/db.sqlite3
+    systemctl start writerblog
 
-Take the app down entirely:
+Take the portfolio down entirely:
     sudo systemctl stop hiimion && sudo systemctl disable hiimion
+    (then roll nginx back, or / will 502)
