@@ -1,0 +1,81 @@
+{% extends "site/base.html" %}
+
+{% block content %}
+<main>
+
+  <section class="hero">
+    <p class="eyebrow">Ion Dodoiu · Italy</p>
+    <h1>I build the boring machinery<br>that makes things <em>work</em>.</h1>
+    <p class="hero-lede">
+      Six projects: a platform for a 51-year-old international music festival, the
+      dashboard that watches my server, a publishing site for a writer, a finance
+      app I forked until it fit, an event-driven invoice pipeline that got me my
+      job, and a scraper that is currently finding me a flat.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="#work">See the work ↓</a>
+      <a class="btn" href="https://github.com/Rehd96" rel="noopener" target="_blank">GitHub ↗</a>
+    </div>
+
+    <dl class="hero-facts">
+      <div><dt>Projects shipped</dt><dd>6</dd></div>
+      <div><dt>Live in production</dt><dd>4</dd></div>
+      <div><dt>Servers to blame</dt><dd>1</dd></div>
+    </dl>
+  </section>
+
+  <section class="work" id="work">
+    <div class="section-head">
+      <h2>Selected work</h2>
+      <p>Each one has its own page: the problem, what I built, and what I would tell you about it over a coffee.</p>
+    </div>
+
+    <div class="cards">
+      {% for project in projects %}
+      <article class="card" style="--accent: {{ project.accent }}">
+        <a class="card-link" href="{% url 'project_detail' project.slug %}">
+          <span class="sr-only">{{ project.name }}</span>
+        </a>
+
+        <header class="card-head">
+          <span class="status status-{{ project.status_css }}">{{ project.status_label }}</span>
+          <span class="card-year">{{ project.year }}</span>
+        </header>
+
+        <h3 class="card-title">{{ project.name }}</h3>
+        <p class="card-tagline">{{ project.tagline }}</p>
+        <p class="card-summary">{{ project.summary }}</p>
+
+        <ul class="chips">
+          {% for tech in project.stack|slice:":5" %}<li>{{ tech }}</li>{% endfor %}
+          {% if project.stack|length > 5 %}<li class="chip-more">+{{ project.stack|length|add:"-5" }}</li>{% endif %}
+        </ul>
+
+        <footer class="card-foot">
+          <span class="card-cta">Read the case study →</span>
+          <span class="card-ext">
+            <a href="{{ project.repo_url }}" rel="noopener" target="_blank">Code ↗</a>
+            {% if project.live_url %}<a href="{{ project.live_url }}" rel="noopener" target="_blank">Live ↗</a>{% endif %}
+          </span>
+        </footer>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="closer">
+    <h2>Want the short version?</h2>
+    <p>
+      I like problems that repeat. Most of what is on this page started as
+      something tedious I was doing by hand — checking listings, checking whether
+      the server was up, coordinating a festival over the phone — and ended as
+      something that does it without me.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="{% url 'about' %}">More about me →</a>
+      <a class="btn" href="mailto:ionut.dodoiu@gmail.com">Get in touch</a>
+    </div>
+  </section>
+
+</main>
+{% endblock %}

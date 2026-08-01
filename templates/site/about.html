@@ -1,0 +1,102 @@
+{% extends "site/base.html" %}
+
+{% block title %}About — Ion Dodoiu{% endblock %}
+{% block description %}Backend and full-stack developer in Italy. What I work with, how I build, and what runs on my VPS.{% endblock %}
+
+{% block content %}
+<main class="about">
+
+  <a class="backlink" href="{% url 'home' %}">← Home</a>
+
+  <header class="about-head">
+    <h1>About</h1>
+    <p class="about-lede">
+      I am a developer in Italy. I work mostly on the backend — pipelines, APIs,
+      the deployment underneath them — and I go as far up the stack as a project
+      needs, which in practice has meant Next.js, Vue and React Native as well.
+    </p>
+  </header>
+
+  <div class="prose-block">
+    <h2>How I tend to work</h2>
+    <p>
+      Nearly everything on this site started as a chore. Re-reading rental
+      listings every morning. SSHing into a server to find out whether anything
+      had fallen over. A festival committee coordinating hundreds of bookings by
+      phone. The interesting part is rarely the technology — it is noticing that
+      a task repeats and is therefore something a machine should be doing.
+    </p>
+    <p>
+      I keep dependencies low when the thing has to be reliable: the agent that
+      monitors my server has none, the rental scraper has three. I write the
+      documentation as I go, because every one of these projects has a moment
+      six months later where I have entirely forgotten how it works. And I put a
+      human review step in front of anything a model produces before it becomes
+      irreversible — a habit from the invoice pipeline that has not steered me
+      wrong since.
+    </p>
+  </div>
+
+  <div class="prose-block">
+    <h2>What I use</h2>
+    <div class="stack-grid">
+      <div>
+        <h3>Backend</h3>
+        <ul class="chips chips-block">
+          <li>Python</li><li>Node.js</li><li>NestJS</li><li>Django</li>
+          <li>FastAPI</li><li>Go</li><li>Kafka</li><li>Redis</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Frontend</h3>
+        <ul class="chips chips-block">
+          <li>TypeScript</li><li>Next.js</li><li>React</li><li>Vue 3</li>
+          <li>React Native / Expo</li><li>Plain HTML/CSS</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Data</h3>
+        <ul class="chips chips-block">
+          <li>PostgreSQL</li><li>SQLite</li><li>Prisma</li><li>Redis</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Infrastructure</h3>
+        <ul class="chips chips-block">
+          <li>Docker</li><li>nginx</li><li>GitHub Actions</li>
+          <li>systemd</li><li>Tailscale</li><li>Let's Encrypt</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="prose-block">
+    <h2>What is running right now</h2>
+    <p>
+      One VPS hosts four of these applications behind nginx, each on its own
+      subpath with everything bound to localhost. Deploys are blue/green where
+      downtime matters and a script where it does not. A monitoring agent pushes
+      the health of all thirteen services to a dashboard I can only reach over
+      Tailscale.
+    </p>
+    <ul class="ticks">
+      {% for project in projects %}
+      <li>
+        <a href="{% url 'project_detail' project.slug %}">{{ project.name }}</a>
+        — {{ project.status_label|lower }}{% if project.live_url %}, at {{ project.live_label }}{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="closer">
+    <h2>Get in touch</h2>
+    <p>Happy to talk about any of it — especially the parts that went wrong.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="mailto:ionut.dodoiu@gmail.com">ionut.dodoiu@gmail.com</a>
+      <a class="btn" href="https://github.com/Rehd96" rel="noopener" target="_blank">GitHub ↗</a>
+    </div>
+  </div>
+
+</main>
+{% endblock %}

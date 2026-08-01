@@ -1,0 +1,147 @@
+{% extends "panel/base.html" %}
+
+{% block title %}Overview{% endblock %}
+
+{% block content %}
+<main class="panel">
+
+  <div class="panel-head">
+    <h1>Traffic</h1>
+    <div class="filters">
+      <div class="seg">
+        <a href="?range=1{% if include_bots %}&bots=1{% endif %}"   class="{% if range_key == '1' %}on{% endif %}">Today</a>
+        <a href="?range=7{% if include_bots %}&bots=1{% endif %}"   class="{% if range_key == '7' %}on{% endif %}">7d</a>
+        <a href="?range=30{% if include_bots %}&bots=1{% endif %}"  class="{% if range_key == '30' %}on{% endif %}">30d</a>
+        <a href="?range=90{% if include_bots %}&bots=1{% endif %}"  class="{% if range_key == '90' %}on{% endif %}">90d</a>
+        <a href="?range=365{% if include_bots %}&bots=1{% endif %}" class="{% if range_key == '365' %}on{% endif %}">1y</a>
+      </div>
+      <a class="toggle {% if include_bots %}on{% endif %}"
+         href="?range={{ range_key }}{% if not include_bots %}&bots=1{% endif %}">
+        {% if include_bots %}Bots included{% else %}Bots hidden{% endif %}
+      </a>
+    </div>
+  </div>
+
+  <section class="tiles">
+    <div class="tile">
+      <span class="tile-label">Views · last {{ range_days }}d</span>
+      <span class="tile-value">{{ stats.window }}</span>
+    </div>
+    <div class="tile">
+      <span class="tile-label">Unique visitors</span>
+      <span class="tile-value">{{ stats.visitors }}</span>
+    </div>
+    <div class="tile">
+      <span class="tile-label">Today</span>
+      <span class="tile-value">{{ stats.today }}</span>
+    </div>
+    <div class="tile">
+      <span class="tile-label">All time</span>
+      <span class="tile-value">{{ stats.all_time }}</span>
+    </div>
+    <div class="tile">
+      <span class="tile-label">Bot hits</span>
+      <span class="tile-value dim">{{ stats.bots }}</span>
+    </div>
+    <div class="tile">
+      <span class="tile-label">4xx / 5xx</span>
+      <span class="tile-value {% if stats.errors %}bad{% endif %}">{{ stats.errors }}</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Views per day</h2>
+    <div class="chart" role="img" aria-label="Daily page views over the selected range">
+      {% for point in series %}
+      <div class="bar-slot" title="{{ point.date|date:'D j M' }} — {{ point.count }} view{{ point.count|pluralize }}">
+        <div class="bar" style="height: {{ point.height }}%"></div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="chart-axis">
+      <span>{{ series.0.date|date:"j M Y" }}</span>
+      <span>today</span>
+    </div>
+  </section>
+
+  <div class="two-col">
+
+    <section class="card">
+      <h2>Project pages</h2>
+      <table class="bars">
+        <tbody>
+        {% for row in project_rows %}
+        <tr>
+          <td class="bar-name">
+            <a href="/projects/{{ row.slug }}/" target="_blank">{{ row.name }}</a>
+          </td>
+          <td class="bar-cell">
+            <div class="hbar" style="width: {{ row.width }}%; background: {{ row.accent }}"></div>
+          </td>
+          <td class="bar-num">{{ row.views }}</td>
+          <td class="bar-num dim" title="unique visitors">{{ row.visitors }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <p class="hint">Second column is unique visitors (per-day hash of IP + user agent).</p>
+    </section>
+
+    <section class="card">
+      <h2>Top pages</h2>
+      <table class="plain">
+        <tbody>
+        {% for row in top_paths %}
+        <tr>
+          <td class="mono ellipsis">{{ row.path }}</td>
+          <td class="num">{{ row.n }}</td>
+        </tr>
+        {% empty %}
+        <tr><td class="empty">No views yet.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+  </div>
+
+  <div class="two-col">
+
+    <section class="card">
+      <h2>Referrers</h2>
+      <table class="plain">
+        <tbody>
+        {% for host, count in top_referrers %}
+        <tr>
+          <td class="mono ellipsis">{{ host }}</td>
+          <td class="num">{{ count }}</td>
+        </tr>
+        {% empty %}
+        <tr><td class="empty">No referrers recorded — all traffic arrived direct.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>Latest hits</h2>
+      <table class="plain">
+        <tbody>
+        {% for hit in recent %}
+        <tr>
+          <td class="mono dim nowrap">{{ hit.created_at|date:"j M H:i" }}</td>
+          <td class="mono ellipsis">{{ hit.path }}</td>
+          <td class="num {% if hit.status >= 400 %}bad{% endif %}">{{ hit.status }}</td>
+        </tr>
+        {% empty %}
+        <tr><td class="empty">Nothing yet.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <p class="hint"><a href="{% url 'panel_views' %}?range={{ range_key }}{% if include_bots %}&bots=1{% endif %}">Full log →</a></p>
+    </section>
+
+  </div>
+
+</main>
+{% endblock %}

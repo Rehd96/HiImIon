@@ -1,0 +1,41 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>{% block title %}Panel{% endblock %} — labustagialla.it</title>
+<link rel="stylesheet" href="{% static 'css/panel.css' %}">
+</head>
+<body>
+
+<header class="panelbar">
+  <a class="panel-brand" href="{% url 'panel_dashboard' %}">
+    <span class="brand-mark"></span> panel
+  </a>
+  {% if user.is_authenticated %}
+  <nav class="panel-nav">
+    <a href="{% url 'panel_dashboard' %}" {% if request.resolver_match.url_name == 'panel_dashboard' %}class="on"{% endif %}>Overview</a>
+    <a href="{% url 'panel_views' %}" {% if request.resolver_match.url_name == 'panel_views' %}class="on"{% endif %}>Raw log</a>
+    <a href="{% url 'home' %}">Site ↗</a>
+  </nav>
+  <div class="panel-user">
+    <span>{{ user.username }}</span>
+    <form method="post" action="{% url 'panel_logout' %}">
+      {% csrf_token %}
+      <button type="submit">Log out</button>
+    </form>
+  </div>
+  {% endif %}
+</header>
+
+{% if messages %}
+<ul class="flash">
+  {% for message in messages %}<li class="flash-{{ message.tags }}">{{ message }}</li>{% endfor %}
+</ul>
+{% endif %}
+
+{% block content %}{% endblock %}
+
+</body>
+</html>

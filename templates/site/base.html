@@ -1,0 +1,45 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Ion Dodoiu — projects{% endblock %}</title>
+<meta name="description" content="{% block description %}Things I have built and shipped: an international festival platform, a monitoring dashboard, a publishing site, a finance fork, an event-driven invoice pipeline and a rental-market scraper.{% endblock %}">
+<link rel="stylesheet" href="{% static 'css/site.css' %}">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🟡</text></svg>">
+</head>
+<body{% block body_attrs %}{% endblock %}>
+
+<div class="grain" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a class="brand" href="{% url 'home' %}">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span class="brand-text">labustagialla<span class="dim">.it</span></span>
+  </a>
+  <nav class="topnav">
+    <a href="{% url 'home' %}#work">Work</a>
+    <a href="{% url 'about' %}">About</a>
+    <a href="https://github.com/Rehd96" rel="me noopener" target="_blank">GitHub ↗</a>
+  </nav>
+</header>
+
+{% block content %}{% endblock %}
+
+<footer class="sitefoot">
+  <div class="foot-inner">
+    <div>
+      <p class="foot-name">Ion Dodoiu</p>
+      <p class="foot-note">Backend and full-stack. Most of this runs on one VPS I also maintain.</p>
+    </div>
+    <div class="foot-links">
+      <a href="https://github.com/Rehd96" rel="noopener" target="_blank">GitHub</a>
+      <a href="mailto:ionut.dodoiu@gmail.com">Email</a>
+      <a href="{% url 'about' %}">About</a>
+    </div>
+  </div>
+  <p class="foot-legal">© {% now "Y" %} — built with Django, deployed by hand.</p>
+</footer>
+
+</body>
+</html>

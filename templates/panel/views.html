@@ -1,0 +1,68 @@
+{% extends "panel/base.html" %}
+
+{% block title %}Raw log{% endblock %}
+
+{% block content %}
+<main class="panel">
+
+  <div class="panel-head">
+    <h1>Raw log</h1>
+    <form class="filters" method="get">
+      <input type="text" name="path" value="{{ path_filter }}" placeholder="filter by path…">
+      <select name="range">
+        <option value="1"   {% if range_key == '1' %}selected{% endif %}>Today</option>
+        <option value="7"   {% if range_key == '7' %}selected{% endif %}>7 days</option>
+        <option value="30"  {% if range_key == '30' %}selected{% endif %}>30 days</option>
+        <option value="90"  {% if range_key == '90' %}selected{% endif %}>90 days</option>
+        <option value="365" {% if range_key == '365' %}selected{% endif %}>1 year</option>
+      </select>
+      <label class="check">
+        <input type="checkbox" name="bots" value="1" {% if include_bots %}checked{% endif %}> bots
+      </label>
+      <button type="submit">Apply</button>
+    </form>
+  </div>
+
+  <section class="card">
+    <p class="hint">{{ page.paginator.count }} hit{{ page.paginator.count|pluralize }} matching.</p>
+    <div class="scroll-x">
+      <table class="log">
+        <thead>
+          <tr>
+            <th>When</th><th>Path</th><th>Status</th><th>ms</th>
+            <th>IP</th><th>Referrer</th><th>User agent</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for hit in page %}
+        <tr {% if hit.is_bot %}class="is-bot"{% endif %}>
+          <td class="mono nowrap dim">{{ hit.created_at|date:"j M H:i:s" }}</td>
+          <td class="mono">{{ hit.path }}</td>
+          <td class="num {% if hit.status >= 400 %}bad{% endif %}">{{ hit.status }}</td>
+          <td class="num dim">{{ hit.latency_ms }}</td>
+          <td class="mono dim">{{ hit.ip|default:"—" }}</td>
+          <td class="mono dim ellipsis">{{ hit.referer_host|default:"—" }}</td>
+          <td class="mono dim ellipsis ua">{{ hit.user_agent|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="empty">Nothing matches.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if page.paginator.num_pages > 1 %}
+    <nav class="pagination">
+      {% if page.has_previous %}
+        <a href="?page={{ page.previous_page_number }}&range={{ range_key }}{% if include_bots %}&bots=1{% endif %}{% if path_filter %}&path={{ path_filter|urlencode }}{% endif %}">← Newer</a>
+      {% endif %}
+      <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+      {% if page.has_next %}
+        <a href="?page={{ page.next_page_number }}&range={{ range_key }}{% if include_bots %}&bots=1{% endif %}{% if path_filter %}&path={{ path_filter|urlencode }}{% endif %}">Older →</a>
+      {% endif %}
+    </nav>
+    {% endif %}
+  </section>
+
+</main>
+{% endblock %}
