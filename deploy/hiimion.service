@@ -1,3 +1,13 @@
+# TEMPLATE — assumes the app lives at /home/ion/HiImIon under a user `ion`.
+#
+# On the VPS the app is usually at /root/HiImIon under root, so DO NOT install
+# this file directly. STEP 4 of VPS_COMMANDS.txt generates the correct unit
+# from $HOME and $(whoami); use that. This copy is here for reference and for
+# machines that really do match the layout below.
+#
+# Note the difference: the generated unit omits ProtectHome, which would stop
+# SQLite from writing the database when the app lives under /root.
+
 [Unit]
 Description=labustagialla.it portfolio (Django + Gunicorn)
 After=network.target

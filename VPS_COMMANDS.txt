@@ -1,0 +1,296 @@
+═══════════════════════════════════════════════════════════════════════════
+ labustagialla.it portfolio — VPS deploy cheat-sheet
+ Copy-paste one STEP at a time. Read the CHECK line after each before moving on.
+═══════════════════════════════════════════════════════════════════════════
+
+Every command derives its paths from $HOME and $(whoami), so this works
+whether you deploy as root (/root/HiImIon) or as a normal user. Nothing is
+hard-coded — do not edit paths by hand.
+
+The app is fully running and health-checked on localhost (STEP 4) BEFORE
+nginx sends it a single public request (STEP 5). If something is wrong you
+find out with zero visitor impact.
+
+
+───────────────────────────────────────────────────────────────────────────
+ STEP 1 — PRE-FLIGHT (read-only, changes nothing)
+───────────────────────────────────────────────────────────────────────────
+
+echo "=== who/where ==="; whoami; echo "HOME=$HOME"
+echo "=== is 8010 free? ==="; ss -tlnp | grep -E ':(8010|8000|8080|3000|3001|4000)\b' || echo "all free"
+echo "=== what serves / today? ==="; curl -sI https://labustagialla.it/ | head -3
+echo "=== nginx files for the domain ==="; grep -rl "labustagialla" /etc/nginx/sites-enabled/ /etc/nginx/conf.d/ 2>/dev/null
+echo "=== existing location prefixes ==="; grep -rhE "^[[:space:]]*location " /etc/nginx/sites-enabled/ 2>/dev/null | sed 's/^[[:space:]]*//' | sort -u
+echo "=== tooling ==="; python3 --version; python3 -m venv --help >/dev/null 2>&1 && echo "venv ok" || echo "!! apt install python3-venv"; nginx -v 2>&1
+
+CHECK:
+  - 8010 must NOT appear in the port list.
+  - Note what currently answers at / — STEP 5 replaces it.
+  - If "!! apt install python3-venv" appears:  sudo apt install -y python3-venv
+
+
+───────────────────────────────────────────────────────────────────────────
+ STEP 2 — BACK UP THE CURRENT NGINX CONFIG (do not skip)
+───────────────────────────────────────────────────────────────────────────
+
+sudo cp -r /etc/nginx/sites-enabled "/root/nginx-backup-$(date +%F-%H%M)"
+sudo cp -r /etc/nginx/sites-available "/root/nginx-backup-available-$(date +%F-%H%M)"
+ls -d /root/nginx-backup-*
+
+CHECK: at least one backup directory is listed. This is your undo for STEP 5.
+
+
+───────────────────────────────────────────────────────────────────────────
+ STEP 3 — CLONE AND SET UP
+───────────────────────────────────────────────────────────────────────────
+
+cd "$HOME"
+git clone https://github.com/Rehd96/HiImIon.git
+cd "$HOME/HiImIon"
+
+python3 -m venv venv
+./venv/bin/pip install -q --upgrade pip
+./venv/bin/pip install -q -r requirements.txt
+./venv/bin/python -c "import django; print('django', django.get_version())"
+
+Now write .env with a REAL generated secret key (this block does it for you):
+
+cd "$HOME/HiImIon"
+SECRET="$(./venv/bin/python -c 'from django.core.management.utils import get_random_secret_key as k; print(k())')"
+cat > .env <<EOF
+DJANGO_SECRET_KEY=$SECRET
+DJANGO_DEBUG=false
+DJANGO_ALLOWED_HOSTS=labustagialla.it,www.labustagialla.it,127.0.0.1
+DJANGO_CSRF_TRUSTED_ORIGINS=https://labustagialla.it,https://www.labustagialla.it
+DJANGO_SSL_REDIRECT=false
+DJANGO_HSTS_SECONDS=0
+PAGEVIEW_RETENTION_DAYS=400
+EOF
+chmod 600 .env
+grep -c SECRET_KEY .env
+
+Then migrate, collect static, and create YOUR panel login:
+
+cd "$HOME/HiImIon"
+set -a; . ./.env; set +a
+./venv/bin/python manage.py migrate
+./venv/bin/python manage.py collectstatic --noinput
+./venv/bin/python manage.py createsuperuser
+
+CHECK:
+  - "django 5.1.5" printed.
+  - grep printed 1  (the .env exists and has a key).
+  - createsuperuser: pick a STRONG password. This is your /panel/ login,
+    it is exposed to the internet, and it is rate-limited to 5 tries/min
+    but that is not a substitute for a good password.
+
+
+───────────────────────────────────────────────────────────────────────────
+ STEP 4 — SYSTEMD (app runs on localhost only)
+───────────────────────────────────────────────────────────────────────────
+
+This GENERATES the unit file with your real user and paths, so it is correct
+whether you are root or not. Do not use deploy/hiimion.service directly —
+that file assumes the laptop layout.
+
+cd "$HOME/HiImIon"
+APP="$HOME/HiImIon"; RUNAS="$(whoami)"
+sudo tee /etc/systemd/system/hiimion.service > /dev/null <<EOF
+[Unit]
+Description=labustagialla.it portfolio (Django + Gunicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=$RUNAS
+WorkingDirectory=$APP
+EnvironmentFile=$APP/.env
+ExecStart=$APP/venv/bin/gunicorn hiimion.wsgi:application --bind 127.0.0.1:8010 --workers 3 --timeout 30 --access-logfile - --error-logfile -
+ExecReload=/bin/kill -s HUP \$MAINPID
+Restart=always
+RestartSec=5
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=$APP
+ProtectKernelTunables=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now hiimion
+sleep 2
+systemctl status hiimion --no-pager | head -12
+
+Smoke-test it on localhost BEFORE nginx knows it exists:
+
+curl -sI http://127.0.0.1:8010/            | head -1
+curl -sI http://127.0.0.1:8010/panel/login/ | head -1
+curl -s   http://127.0.0.1:8010/ | grep -o "<h3 class=\"card-title\">[^<]*" | sed 's/.*>//'
+
+CHECK:
+  - status is "active (running)"
+  - both curls print "HTTP/1.1 200 OK"
+  - the last command lists all SIX project names
+
+IF IT FAILED:
+  sudo journalctl -u hiimion -n 40 --no-pager
+  Usual causes: missing .env, port 8010 taken, venv path wrong.
+  STOP HERE and send me the journalctl output — do not proceed to STEP 5.
+
+
+───────────────────────────────────────────────────────────────────────────
+ STEP 5 — NGINX (this is the step that goes public)
+───────────────────────────────────────────────────────────────────────────
+
+5a. Rate-limit zones at http{} scope. Safe to re-run; skips if present.
+
+if grep -q portfolio_login /etc/nginx/conf.d/ratelimits.conf 2>/dev/null; then
+  echo "already present — skipping"
+else
+  sudo tee -a /etc/nginx/conf.d/ratelimits.conf > /dev/null <<'EOF'
+limit_req_zone $binary_remote_addr zone=portfolio_login:10m rate=5r/m;
+limit_req_zone $binary_remote_addr zone=portfolio_all:10m   rate=120r/m;
+EOF
+  echo "zones added"
+fi
+
+5b. Generate the location blocks with YOUR real static path:
+
+APP="$HOME/HiImIon"
+sudo mkdir -p /etc/nginx/snippets
+sudo tee /etc/nginx/snippets/portfolio.conf > /dev/null <<EOF
+location /static/ {
+    alias $APP/staticfiles/;
+    access_log off;
+    expires 30d;
+    add_header Cache-Control "public, immutable";
+}
+
+location = /panel/login/ {
+    limit_req zone=portfolio_login burst=3 nodelay;
+    proxy_pass http://127.0.0.1:8010;
+    proxy_set_header Host              \$host;
+    proxy_set_header X-Real-IP         \$remote_addr;
+    proxy_set_header X-Forwarded-For   \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+}
+
+location /django-admin/ {
+    allow 127.0.0.1;
+    deny all;
+    proxy_pass http://127.0.0.1:8010;
+    proxy_set_header Host              \$host;
+    proxy_set_header X-Real-IP         \$remote_addr;
+    proxy_set_header X-Forwarded-For   \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+}
+
+location / {
+    limit_req zone=portfolio_all burst=40 nodelay;
+    proxy_pass http://127.0.0.1:8010;
+    proxy_set_header Host              \$host;
+    proxy_set_header X-Real-IP         \$remote_addr;
+    proxy_set_header X-Forwarded-For   \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+    proxy_redirect off;
+    proxy_connect_timeout 10s;
+    proxy_read_timeout    30s;
+}
+EOF
+grep -E "alias|proxy_pass" /etc/nginx/snippets/portfolio.conf
+
+CHECK: the alias line shows YOUR real path ending in /HiImIon/staticfiles/
+       and proxy_pass lines point at 127.0.0.1:8010.
+
+5c. NOW EDIT BY HAND — this part I cannot script safely, because it depends
+    on how your existing server block is written:
+
+sudo nano /etc/nginx/sites-enabled/<the file STEP 1 named>
+
+    Inside the  server { listen 443 ssl; server_name labustagialla.it; }  block:
+      - find the EXISTING  location / { ... }  block and DELETE or comment it
+        (that is whatever serves / today — your backup from STEP 2 has it)
+      - then, AFTER the /cff, /fai and /ezbk blocks, add this ONE line:
+
+            include /etc/nginx/snippets/portfolio.conf;
+
+    Leave the /cff, /fai, /ezbk blocks completely alone.
+
+5d. Test and reload:
+
+sudo nginx -t
+sudo systemctl reload nginx
+
+CHECK: "syntax is ok" and "test is successful". If nginx -t fails, DO NOT
+reload — fix it, or restore:  sudo cp -r /root/nginx-backup-*/. /etc/nginx/sites-enabled/
+
+
+───────────────────────────────────────────────────────────────────────────
+ STEP 6 — VERIFY EVERYTHING, INCLUDING THE NEIGHBOURS
+───────────────────────────────────────────────────────────────────────────
+
+for p in / /about/ /projects/rentwatch/ /projects/castelfidardo-festival/ \
+         /panel/login/ /robots.txt /static/css/site.css /cff/ /fai /ezbk; do
+  printf '%-42s %s\n' "$p" "$(curl -so /dev/null -w '%{http_code}' "https://labustagialla.it$p")"
+done
+
+CHECK:
+  / /about/ /projects/* /panel/login/ /robots.txt /static/css/site.css  -> 200
+  /cff/ /fai /ezbk                                                      -> 200 or 301/302
+  A 404 on /static/css/site.css means the alias path is wrong (STEP 5b).
+  A 502 on / means gunicorn is not running (back to STEP 4).
+
+Then open https://labustagialla.it/panel/ in a browser and log in with the
+superuser from STEP 3. You should see the dashboard, with your own visit
+NOT counted (panel hits are never logged).
+
+
+───────────────────────────────────────────────────────────────────────────
+ STEP 7 — RETENTION CRON
+───────────────────────────────────────────────────────────────────────────
+
+( sudo crontab -l 2>/dev/null; echo "17 4 * * * cd $HOME/HiImIon && ./venv/bin/python manage.py prune_views >> /var/log/hiimion-prune.log 2>&1" ) | sudo crontab -
+sudo crontab -l | tail -2
+
+Optional — add to the festival-monitor agent so it watches this app too:
+edit  deploy/monitor-agent/agent-config.json  and add
+    { "name": "Portfolio", "url": "http://127.0.0.1:8010/", "expect": 200 }
+then  sudo systemctl restart festival-monitor-agent
+
+
+═══════════════════════════════════════════════════════════════════════════
+ UPDATING LATER
+═══════════════════════════════════════════════════════════════════════════
+
+cd "$HOME/HiImIon"
+git pull
+set -a; . ./.env; set +a
+./venv/bin/pip install -q -r requirements.txt
+./venv/bin/python manage.py migrate --noinput
+./venv/bin/python manage.py collectstatic --noinput
+sudo systemctl restart hiimion
+curl -sI http://127.0.0.1:8010/ | head -1
+
+Content-only change (editing portfolio/projects.py): git pull + restart is enough.
+
+
+═══════════════════════════════════════════════════════════════════════════
+ ROLLBACK
+═══════════════════════════════════════════════════════════════════════════
+
+Bad code:
+    cd "$HOME/HiImIon" && git log --oneline -5
+    git checkout <previous-sha> && sudo systemctl restart hiimion
+    (the database only holds page views — rolling back is always safe)
+
+Bad nginx / want the old site at / back:
+    sudo cp -r /root/nginx-backup-<timestamp>/. /etc/nginx/sites-enabled/
+    sudo nginx -t && sudo systemctl reload nginx
+
+Take the app down entirely:
+    sudo systemctl stop hiimion && sudo systemctl disable hiimion
