@@ -356,6 +356,89 @@ Confirm the blog's CSS actually loads — a bare unstyled page means
 
 
 ───────────────────────────────────────────────────────────────────────────
+ STEP 6b — TROUBLESHOOTING: page renders but has NO STYLING
+───────────────────────────────────────────────────────────────────────────
+
+Symptom: https://labustagialla.it/ shows all the right text as bare
+unformatted HTML — serif font, blue underlined links, no dark background.
+The app is fine; nginx is not serving /static/.
+
+Note this is invisible on /blog/. writerblog styles its pages INLINE in the
+base templates and no template of its uses {% static %} at all, so the blog
+renders perfectly with zero static files and hides the same fault.
+
+DIAGNOSE:
+
+echo "=== what does the page ask for? ==="
+curl -s https://labustagialla.it/ | grep -o '/static/[^"]*\.css'
+echo "=== what does that URL return? ==="
+curl -sI https://labustagialla.it/static/css/site.css | head -1
+echo "=== do the files exist? ==="
+ls -la /root/HiImIon/staticfiles/css/ | head
+echo "=== permissions along the path ==="
+ls -ld / /root /root/HiImIon /root/HiImIon/staticfiles
+echo "=== can nginx's user read it? ==="
+sudo -u www-data test -r /root/HiImIon/staticfiles/css/site.css && echo "www-data CAN read" || echo "www-data CANNOT read  <-- the bug"
+echo "=== nginx error log ==="
+sudo tail -5 /var/log/nginx/error.log
+
+Expected: the page asks for a HASHED name like
+/static/css/site.d3714fe2aca1.css. collectstatic writes both that and the
+plain site.css, so either resolves — a 403/404 on both means nginx cannot
+reach the directory, not that the name is wrong.
+
+MOST LIKELY CAUSE: /root is mode 700. nginx workers run as www-data and
+cannot traverse into /root, so every file under /root/HiImIon/staticfiles/
+fails no matter how correct the alias is.
+
+
+FIX B — let WhiteNoise serve static (RECOMMENDED)
+
+WhiteNoise is already installed and in this app's middleware; it is how
+static was served during local testing. It reads files as the app's own user,
+so /root permissions stop mattering entirely. It also handles the hashed
+names, the pre-compressed .gz files collectstatic already wrote, and
+immutable cache headers.
+
+The nginx /static/ block MUST be removed — otherwise nginx keeps
+intercepting /static/ and failing before the request ever reaches gunicorn.
+
+sudo cp /etc/nginx/sites-available/writerblog "/root/writerblog-nginx.bak-$(date +%F-%H%M)"
+sudo python3 - <<'PY'
+import re
+p = '/etc/nginx/sites-available/writerblog'
+s = open(p).read()
+# Remove ONLY the portfolio /static/ block (the one aliasing into HiImIon).
+new = re.sub(r'\n[ \t]*location /static/ \{[^}]*HiImIon[^}]*\}\n', '\n', s)
+if new == s:
+    print('NOTHING REMOVED — check the file by hand, do not reload')
+else:
+    open(p,'w').write(new); print('portfolio /static/ block removed')
+PY
+sudo nginx -t && sudo systemctl reload nginx
+curl -sI https://labustagialla.it/static/css/site.css | head -1
+
+CHECK: 200, and the browser now shows the dark styled page. Hard-refresh
+(Ctrl+Shift+R) — the unstyled version may be cached.
+
+Leave the /blog/static/ block alone. writerblog has no WhiteNoise, and its
+only static consumer is Django admin at /blog/django-admin/, which is
+localhost-only anyway.
+
+
+FIX A — chmod o+x /root  (alternative, NOT recommended)
+
+sudo chmod o+x /root
+sudo systemctl reload nginx
+
+One command, and it fixes both apps' static at once. But it makes /root
+traversable by every user on the box, so anything inside with loose
+permissions becomes reachable. On a single-admin VPS the risk is small — it
+is still a permanent widening of access to fix a styling bug, and easy to
+forget you did it. Prefer FIX B.
+
+
+───────────────────────────────────────────────────────────────────────────
  STEP 7 — RETENTION CRON
 ───────────────────────────────────────────────────────────────────────────
 
