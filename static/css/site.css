@@ -368,6 +368,30 @@ body > *:not(.grain) { position: relative; z-index: 1; }
 
 .project-head { padding-bottom: 44px; border-bottom: 1px solid var(--line-soft); }
 
+/* Screenshot between the header and the write-up. The image is a light UI on
+   a dark page, so it gets a border and a little breathing room rather than
+   bleeding into the background. */
+.project-shot {
+  margin: 40px 0 0;
+  padding: 0;
+}
+
+.project-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+}
+
+.project-shot figcaption {
+  margin-top: 12px;
+  font-size: 13.5px;
+  color: var(--ink-faint);
+  max-width: 68ch;
+}
+
 .project-meta {
   display: flex;
   flex-wrap: wrap;

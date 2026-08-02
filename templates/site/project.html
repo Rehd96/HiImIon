@@ -4,6 +4,7 @@
 {% block description %}{{ project.summary|striptags|truncatewords:35 }}{% endblock %}
 {% block body_attrs %} class="project-page" style="--accent: {{ project.accent }}"{% endblock %}
 
+{% load static %}
 {% block content %}
 <main class="project">
 
@@ -35,6 +36,16 @@
       {% endif %}
     </div>
   </header>
+
+  {% if project.screenshot %}
+  <figure class="project-shot">
+    <img src="{% static project.screenshot %}" alt="{{ project.screenshot_alt }}"
+         loading="lazy" decoding="async">
+    {% if project.screenshot_caption %}
+      <figcaption>{{ project.screenshot_caption }}</figcaption>
+    {% endif %}
+  </figure>
+  {% endif %}
 
   <div class="project-body">
 

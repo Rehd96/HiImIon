@@ -31,6 +31,30 @@ class PublicSiteTests(TestCase):
                     f'https://github.com/{project_data.GITHUB_USER}/{project["repo"]}',
                 )
 
+    def test_screenshots_are_declared_and_present(self):
+        """A project that names a screenshot must ship the file and describe it.
+
+        A broken <img> on a portfolio is worse than no image, and alt text is
+        the only version of the picture some readers get.
+        """
+        from pathlib import Path
+
+        from django.conf import settings
+
+        for project in project_data.PROJECTS:
+            shot = project.get('screenshot')
+            if not shot:
+                continue
+            with self.subTest(slug=project['slug']):
+                found = any((Path(root) / shot).is_file()
+                            for root in settings.STATICFILES_DIRS)
+                self.assertTrue(found, f'{shot} is declared but missing on disk')
+                self.assertTrue(project.get('screenshot_alt'),
+                                f'{project["slug"]} has a screenshot with no alt text')
+                response = self.client.get(f'/projects/{project["slug"]}/')
+                self.assertContains(response, 'project-shot')
+                self.assertContains(response, project['screenshot_alt'][:40])
+
     def test_unknown_project_is_404(self):
         self.assertEqual(self.client.get('/projects/nope/').status_code, 404)
 

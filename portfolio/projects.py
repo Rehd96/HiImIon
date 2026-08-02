@@ -395,21 +395,33 @@ PROJECTS = [
         'name': 'rentwatch',
         'tagline': 'Finding a flat in Turin without re-reading the same 300 listings every day.',
         'year': '2026',
-        'status': 'active',
+        'status': 'private',
         'accent': '#facc15',
         'repo': 'rentwatch',
+        # Deployed on this server at /case/, but there is no public URL to link:
+        # the dashboard is the list of flats I am actually looking at.
         'live_url': None,
-        # It does run on this server now, at /case/, but behind a login: the
-        # dashboard is a list of the flats I am actually looking at.
-        'live_label': 'Private deploy — self-host it yourself',
+        'live_label': 'Running on this server, behind a login',
         'role': 'Sole developer',
-        'stack': ['Python 3.11', 'curl_cffi', 'FastAPI', 'SQLite',
-                  'Telegram Bot API'],
+        'stack': ['Python 3.10', 'curl_cffi', 'FastAPI', 'SQLite',
+                  'Telegram Bot API', 'systemd', 'nginx'],
+        'screenshot': 'img/rentwatch-dashboard.png',
+        'screenshot_alt': (
+            'The rentwatch dashboard: 1,345 active listings, a median rent of €720 '
+            'and €12/m², a bar chart of median €/m² by Turin zone from Centro down '
+            'to Mirafiori Sud, and the listings table with price, surface, €/m², '
+            'rooms, floor and days on market.'
+        ),
+        'screenshot_caption': (
+            'The live dashboard. The zone chart is the part I actually use: it turns '
+            '“is €600 a lot?” into a number per neighbourhood.'
+        ),
         'summary': (
             'A rental-market monitor for immobiliare.it. It scrapes a city\'s '
-            'listings on a schedule, keeps every price change in SQLite, and shows a '
-            'dashboard of €/m² by zone, days on market, price drops and what appeared '
-            'since yesterday. Three dependencies, no framework, runs on a laptop.'
+            'listings every four hours, keeps every price change in SQLite, and shows '
+            'a dashboard of €/m² by zone, days on market, price drops and what '
+            'appeared since yesterday. Now deployed on this server behind a login, '
+            'with two accounts and Telegram notifications.'
         ),
         'sections': [
             {
@@ -436,7 +448,47 @@ PROJECTS = [
                     'come back, favourites stay tracked even after they are pulled from the '
                     'portal.',
                     'A Markdown report regenerated on every scan for reading on a phone, '
-                    'and optional Telegram notifications for new listings.',
+                    'and Telegram notifications for new listings and price drops.',
+                ],
+            },
+            {
+                'heading': 'Looking for a flat with someone else',
+                'body': [
+                    'Two people hunting for the same flat need two logins, so the '
+                    'dashboard has accounts: PBKDF2 hashes, a signed session cookie, and '
+                    'a per-IP attempt limit. The gate is middleware rather than a check '
+                    'per route, so a route added later is protected by default — '
+                    'forgetting to log in is a nuisance, forgetting to guard an endpoint '
+                    'publishes where you are about to live.',
+                    'Favourites are personal but shared: your ♥ is yours, and each '
+                    'listing shows who marked it. The "only favourites" filter matches '
+                    'either person\'s — a flat one of you liked should not vanish from '
+                    'the other\'s view. Dismissing (✕), by contrast, stays shared: ruling '
+                    'a place out is a joint decision, not a taste.',
+                    'Telegram follows the same idea. Every recipient gets every '
+                    'notification, each chat can be linked to an account so "/preferiti '
+                    'miei" knows whose shortlist to read, and a delivery that fails for '
+                    'one person does not mark the message failed for the other.',
+                ],
+            },
+            {
+                'heading': 'What it took to run it in public',
+                'body': [
+                    'It runs on this server, on a systemd timer every four hours, behind '
+                    'the same nginx that serves this page. Mounted under a path prefix '
+                    'rather than a subdomain, which is where the interesting bug was: '
+                    'the login page redirected to itself, because the framework keeps the '
+                    'mount prefix on the request path and the check for "is this page '
+                    'public" no longer matched.',
+                    'Nothing new was added to the dependency list to get there. The '
+                    'password hashing and the session signature come out of hashlib and '
+                    'hmac, the config writer is about forty lines because the standard '
+                    'library reads TOML but cannot write it, and the login form is parsed '
+                    'by hand rather than pull in a library to read two fields.',
+                    'There is one thing I would not claim is solved: the box scrapes from '
+                    'a datacenter IP, which portals treat with more suspicion than a home '
+                    'connection. If it gets blocked the fallback is to scrape at home and '
+                    'copy the database up.',
                 ],
             },
             {
@@ -458,9 +510,10 @@ PROJECTS = [
             {
                 'heading': 'Where it stands',
                 'body': [
-                    'Actively in use — it is currently how I am looking for a flat. It is '
-                    'also the project I would point at to explain what I like building: a '
-                    'small tool that removes a real, boring, daily task.',
+                    'Live and in daily use — it is currently how I am looking for a flat, '
+                    'tracking around 1,300 active listings in Turin. It is also the '
+                    'project I would point at to explain what I like building: a small '
+                    'tool that removes a real, boring, daily task.',
                 ],
             },
         ],
@@ -468,7 +521,9 @@ PROJECTS = [
             'TLS fingerprint impersonation to get past a 403',
             'Full price history, not just current asking price',
             'Heuristic that flags mis-listed rooms and excludes them from medians',
-            'Three dependencies total',
+            'Two accounts, with favourites that are personal but visible to both',
+            'Scrapes every four hours on a systemd timer',
+            'Four dependencies, three of them only for the web layer',
         ],
     },
 ]
