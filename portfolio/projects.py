@@ -399,7 +399,9 @@ PROJECTS = [
         'accent': '#facc15',
         'repo': 'rentwatch',
         'live_url': None,
-        'live_label': 'Runs locally — self-host it yourself',
+        # It does run on this server now, at /case/, but behind a login: the
+        # dashboard is a list of the flats I am actually looking at.
+        'live_label': 'Private deploy — self-host it yourself',
         'role': 'Sole developer',
         'stack': ['Python 3.11', 'curl_cffi', 'FastAPI', 'SQLite',
                   'Telegram Bot API'],

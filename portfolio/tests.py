@@ -39,8 +39,10 @@ class PublicSiteTests(TestCase):
         robots = self.client.get('/robots.txt')
         self.assertEqual(robots['Content-Type'], 'text/plain')
         self.assertContains(robots, 'Disallow: /panel/')
-        # The blog serves no robots.txt of its own — its policy lives here.
+        # The blog and rentwatch serve no robots.txt of their own — their
+        # policy lives here, at the only root a crawler will ask.
         self.assertContains(robots, 'Disallow: /blog/')
+        self.assertContains(robots, 'Disallow: /case/')
 
 
 class PageViewLoggingTests(TestCase):
