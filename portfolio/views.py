@@ -73,3 +73,13 @@ Disallow: /
 
 def robots(request):
     return HttpResponse(ROBOTS, content_type='text/plain')
+
+
+def healthz(request):
+    """Liveness probe for the VPS monitor agent.
+
+    Deliberately not the homepage: the agent polls every 30 seconds, and
+    PageViewMiddleware skips this path so the panel keeps counting people
+    rather than the monitoring.
+    """
+    return HttpResponse('ok', content_type='text/plain')

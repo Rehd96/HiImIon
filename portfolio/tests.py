@@ -63,6 +63,13 @@ class PageViewLoggingTests(TestCase):
         self.client.get('/static/css/site.css', HTTP_USER_AGENT=BROWSER_UA)
         self.assertEqual(PageView.objects.count(), 0)
 
+    def test_healthz_is_not_logged(self):
+        # The monitor agent polls this every 30s; counting it would drown the
+        # panel in ~2,900 rows a day.
+        response = self.client.get('/healthz', HTTP_USER_AGENT=BROWSER_UA)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(PageView.objects.count(), 0)
+
     def test_404s_are_logged_with_their_status(self):
         self.client.get('/projects/nope/', HTTP_USER_AGENT=BROWSER_UA)
         self.assertEqual(PageView.objects.get().status, 404)

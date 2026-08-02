@@ -3,7 +3,9 @@ import time
 
 from django.utils import timezone
 
-SKIP_PREFIXES = ('/static/', '/media/', '/favicon', '/django-admin/')
+# /healthz is polled by the VPS monitor agent every 30 seconds. Recording that
+# would add ~2,900 rows a day and bury the real traffic in the panel.
+SKIP_PREFIXES = ('/static/', '/media/', '/favicon', '/django-admin/', '/healthz')
 
 # Substrings that mean "not a person". Checked lowercased; kept short and
 # obvious rather than exhaustive — the panel can filter bots either way.
