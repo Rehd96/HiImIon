@@ -166,6 +166,112 @@ class KittenAppTests(TestCase):
         self.assertRedirects(response, reverse('kitten_detail'))
 
     def test_panel_logout_redirects_to_mais_when_specified(self):
-        self.client.login(username='staffuser', password='password123')
+        self.client.login(username='staff', password='staffpassword123')
         response = self.client.post(reverse('panel_logout'), {'next': reverse('kitten_detail')})
         self.assertRedirects(response, reverse('kitten_detail'))
+
+    def test_analytics_log_endpoint(self):
+        post = KittenPost.objects.create(
+            kitten=self.profile,
+            media_type='photo',
+            title='Mais al tiragraffi',
+            tag='gioco'
+        )
+        payload = {
+            'sid': 'sess_unit_test_123',
+            'seconds': 42,
+            'scroll': 85,
+            'posts': [post.id],
+            'utm': 'flyer_a4',
+            'action': 'chat_open'
+        }
+        res = self.client.post(
+            reverse('kitten_analytics_log'),
+            data=payload,
+            content_type='application/json',
+            HTTP_USER_AGENT='Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)'
+        )
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertTrue(data.get('ok'))
+
+        from .models import KittenVisitorSession, KittenPostImpression
+        sess = KittenVisitorSession.objects.get(session_id='sess_unit_test_123')
+        self.assertEqual(sess.total_seconds, 42)
+        self.assertEqual(sess.max_scroll_percent, 85)
+        self.assertEqual(sess.utm_source, 'flyer_a4')
+        self.assertEqual(sess.device_type, 'mobile')
+        self.assertTrue(sess.reached_feed)
+        self.assertTrue(sess.reached_adoption)
+        self.assertTrue(sess.clicked_chat)
+        self.assertEqual(sess.duration_formatted, '42s')
+
+        # Check post impression tracked
+        self.assertTrue(KittenPostImpression.objects.filter(session=sess, post=post).exists())
+
+    def test_chat_send_and_messages(self):
+        from unittest.mock import patch
+        with patch('kitten.views.notify_new_inquiry', return_value=(True, 'OK')) as mock_notify:
+            res = self.client.post(
+                reverse('kitten_chat_send'),
+                data={
+                    'name': 'Chiara',
+                    'contact': '347 1122334',
+                    'message': 'Ciao, vorrei venire a vedere Mais!'
+                },
+                content_type='application/json'
+            )
+            self.assertEqual(res.status_code, 200)
+            data = res.json()
+            self.assertTrue(data.get('success'))
+            token = data.get('token')
+            self.assertTrue(token)
+
+            mock_notify.assert_called_once()
+
+            # Retrieve messages as visitor
+            res_msgs = self.client.get(f"{reverse('kitten_chat_messages')}?token={token}")
+            self.assertEqual(res_msgs.status_code, 200)
+            data_msgs = res_msgs.json()
+            self.assertTrue(data_msgs.get('success'))
+            self.assertEqual(len(data_msgs.get('messages')), 1)
+            self.assertEqual(data_msgs['messages'][0]['text'], 'Ciao, vorrei venire a vedere Mais!')
+            self.assertEqual(data_msgs['messages'][0]['sender'], 'visitor')
+
+    def test_admin_reply_chat(self):
+        from .models import KittenInquiry, KittenInquiryMessage
+        inq = KittenInquiry.objects.create(
+            kitten=self.profile,
+            name='Giulia',
+            contact='giulia@example.it'
+        )
+        KittenInquiryMessage.objects.create(
+            inquiry=inq,
+            sender='visitor',
+            text='È ancora disponibile?'
+        )
+
+        self.client.login(username='staff', password='staffpassword123')
+        reply_url = reverse('kitten_admin_reply_chat', args=[inq.id])
+        res = self.client.post(reply_url, {'reply_text': 'Sì Giulia, è ancora disponibile!'})
+        self.assertEqual(res.status_code, 302)
+
+        # Verify reply stored
+        inq.refresh_from_db()
+        self.assertEqual(inq.status, 'replied')
+        self.assertEqual(inq.messages.count(), 2)
+        last_msg = inq.messages.last()
+        self.assertEqual(last_msg.sender, 'admin')
+        self.assertEqual(last_msg.text, 'Sì Giulia, è ancora disponibile!')
+
+    def test_telegram_test_endpoint(self):
+        from unittest.mock import patch
+        self.client.login(username='staff', password='staffpassword123')
+        with patch('kitten.views.send_telegram_message', return_value=(True, 'Messaggio inviato')):
+            res = self.client.post(reverse('kitten_telegram_test'), {
+                'telegram_bot_token': '123456:ABC-DEF',
+                'telegram_chat_id': '987654321',
+            })
+            self.assertEqual(res.status_code, 302)
+            self.assertTrue(res.url.endswith('#telegram'))
+

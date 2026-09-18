@@ -9,11 +9,21 @@ urlpatterns = [
     path('mais/volantino/a4/', views.kitten_flyer_a4, name='kitten_flyer_a4'),
     path('mais/volantino/a5/', views.kitten_flyer_a5, name='kitten_flyer_a5'),
 
+    # Analytics Beacon & Live Logging (Cookieless)
+    path('mais/api/log/', views.kitten_analytics_log, name='kitten_analytics_log'),
+
+    # In-site Adoption Chat
+    path('mais/api/chat/send/', views.kitten_chat_send, name='kitten_chat_send'),
+    path('mais/api/chat/messages/', views.kitten_chat_messages, name='kitten_chat_messages'),
+
     # Admin management panel (also linked inside /panel/)
     path('mais/gestione/', views.kitten_admin, name='kitten_admin'),
+    path('mais/gestione/chat/<int:inquiry_id>/rispondi/', views.kitten_admin_reply_chat, name='kitten_admin_reply_chat'),
+    path('mais/gestione/telegram/test/', views.kitten_telegram_test, name='kitten_telegram_test'),
     path('mais/post/<int:post_id>/delete/', views.kitten_delete_post, name='kitten_delete_post'),
 
     # Friendly redirects
     path('adotta/', views.kitten_redirect, name='kitten_adotta'),
     path('gattino/', views.kitten_redirect, name='kitten_gattino'),
 ]
+

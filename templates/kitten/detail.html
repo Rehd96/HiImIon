@@ -35,7 +35,7 @@
       </a>
       {% endif %}
       <a href="#feed" class="k-pill-link">📸 Video & Foto</a>
-      <a href="#adozione" class="k-pill-link highlight">💌 Adottami</a>
+      <button type="button" class="k-pill-link highlight" onclick="openChatModal(event)" style="border:none; cursor:pointer;">💬 Chatta / Adottami</button>
     </div>
   </div>
 </header>
@@ -96,16 +96,21 @@
 
       <!-- Action CTA Buttons -->
       <div class="k-hero-actions">
+        <!-- Direct In-Site Chat Button -->
+        <button type="button" class="btn-cta btn-chat" onclick="openChatModal(event)">
+          <span>💬 Chatta per Adottarla</span>
+        </button>
+
         {% if kitten.phone_number %}
           <a href="{{ kitten.whatsapp_url }}" target="_blank" rel="noopener" class="btn-cta btn-whatsapp">
             <svg class="icon-svg" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
               <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.073.043.419-.101.824z"/>
               <path d="M12 2C6.477 2 2 6.477 2 12c0 1.891.524 3.662 1.435 5.176L2 22l4.981-1.306A9.957 9.957 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.2c-1.636 0-3.153-.473-4.437-1.29l-.318-.204-2.957.776.789-2.883-.207-.33A8.172 8.172 0 013.8 12c0-4.521 3.679-8.2 8.2-8.2s8.2 3.679 8.2 8.2-3.679 8.2-8.2 8.2z"/>
             </svg>
-            <span>Scrivi su WhatsApp</span>
+            <span>WhatsApp</span>
           </a>
           <a href="tel:{{ kitten.phone_number }}" class="btn-cta btn-call">
-            📞 Chiama: {{ kitten.phone_number }}
+            📞 Chiama
           </a>
         {% else %}
           <div class="phone-notice">
@@ -303,17 +308,21 @@
         <h3>{{ kitten.adoption_cta_title|default:"Vuoi venire a conoscere Mais di persona?" }}</h3>
         <p>{{ kitten.adoption_cta_desc }}</p>
 
-        {% if kitten.phone_number %}
         <div class="cta-cluster">
+          <button type="button" class="btn-cta btn-chat large" onclick="openChatModal(event)">
+            <span>💬 Chatta con noi per Mais</span>
+          </button>
+          {% if kitten.phone_number %}
           <a href="{{ kitten.whatsapp_url }}" target="_blank" rel="noopener" class="btn-cta btn-whatsapp large">
             <span>💌 Scrivici su WhatsApp</span>
           </a>
           <a href="tel:{{ kitten.phone_number }}" class="btn-cta btn-call large">
             <span>📞 Chiama {{ kitten.phone_number }}</span>
           </a>
+          {% endif %}
         </div>
-        {% else %}
-        <p class="alert-phone">Configura il numero di telefono nel pannello di amministrazione per abilitare il contatto diretto.</p>
+        {% if not kitten.phone_number %}
+        <p class="alert-phone" style="margin-top: 12px;">Puoi scriverci direttamente usando la chat sul sito qui sopra!</p>
         {% endif %}
       </div>
     </div>
@@ -356,11 +365,53 @@
   </div>
 </div>
 
+<!-- IN-SITE ADOPTION CHAT MODAL -->
+<div id="adoptionChatModal" class="chat-modal" onclick="closeChatModal(event)">
+  <div class="chat-modal-window">
+    <div class="chat-header">
+      <div class="chat-title-group">
+        <span class="chat-avatar">🐾</span>
+        <div>
+          <h3>Chat per Adottare Mais</h3>
+          <span class="chat-status-indicator">🟢 Invia direttamente a noi</span>
+        </div>
+      </div>
+      <button type="button" class="chat-close-btn" onclick="closeChatModal()">&times;</button>
+    </div>
+
+    <div class="chat-body" id="chatMessagesStream">
+      <div class="chat-bubble admin">
+        <p>Ciao! 🐾 Ti interessa adottare Mais o vuoi farci domande? Scrivici qui sotto: ti risponderemo subito sul sito o tramite il contatto che ci lasci!</p>
+        <span class="bubble-time">Adesso</span>
+      </div>
+    </div>
+
+    <form class="chat-footer-form" id="chatSendForm" onsubmit="handleSendChatMessage(event)">
+      <div class="chat-inputs-compact" id="chatVisitorInputs">
+        <input type="text" id="chatVisitorName" class="chat-input" placeholder="Il tuo nome..." required>
+        <input type="text" id="chatVisitorContact" class="chat-input" placeholder="Telefono / WhatsApp o Email..." required>
+      </div>
+      <div class="chat-input-row">
+        <textarea id="chatVisitorMsg" class="chat-textarea" placeholder="Scrivi il tuo messaggio per Mais..." rows="2" required></textarea>
+        <button type="submit" class="chat-submit-btn" id="chatSendBtn" title="Invia messaggio">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+        </button>
+      </div>
+      <span class="chat-privacy-hint">🔒 Riceverai risposta qui e sul contatto indicato. Nessuno spam.</span>
+    </form>
+  </div>
+</div>
+
 <!-- Floating Mobile Sticky Contact Bar (Visible only on < 768px) -->
 <nav class="k-mobile-sticky-bar" aria-label="Contatti rapidi adozione">
+  <button type="button" class="mobile-bar-btn chat" onclick="openChatModal(event)" title="Chatta per Mais">
+    <span>💬 Chatta</span>
+  </button>
   {% if kitten.phone_number %}
     <a href="{{ kitten.whatsapp_url }}" target="_blank" rel="noopener" class="mobile-bar-btn whatsapp" title="Scrivi su WhatsApp">
-      <svg class="mobile-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+      <svg class="mobile-svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
         <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.073.043.419-.101.824z"/>
         <path d="M12 2C6.477 2 2 6.477 2 12c0 1.891.524 3.662 1.435 5.176L2 22l4.981-1.306A9.957 9.957 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.2c-1.636 0-3.153-.473-4.437-1.29l-.318-.204-2.957.776.789-2.883-.207-.33A8.172 8.172 0 013.8 12c0-4.521 3.679-8.2 8.2-8.2s8.2 3.679 8.2 8.2-3.679 8.2-8.2 8.2z"/>
       </svg>
@@ -368,10 +419,6 @@
     </a>
     <a href="tel:{{ kitten.phone_number }}" class="mobile-bar-btn call" title="Chiama al telefono">
       <span>📞 Chiama</span>
-    </a>
-  {% else %}
-    <a href="#adozione" class="mobile-bar-btn whatsapp">
-      <span>💌 Contattaci</span>
     </a>
   {% endif %}
   <button type="button" class="mobile-bar-btn purr" id="btnPurrMobile" data-slug="{{ kitten.slug }}">
@@ -398,20 +445,133 @@
   </div>
 </footer>
 
-<!-- CSRF Token for Likes -->
+<!-- CSRF Token for Likes & Chat -->
 {% csrf_token %}
 
 <script>
-// Live Purr / Like button (Desktop & Mobile)
+// ─────────────────────────────────────────────────────────────────────────────
+//  ANALYTICS & ACTIVITY LOGGER (Cookieless, GDPR-Exempt)
+// ─────────────────────────────────────────────────────────────────────────────
+const TRACK_CONFIG = {
+  logUrl: '{% url "kitten_analytics_log" %}',
+  likeUrl: '{% url "kitten_like" %}',
+  chatSendUrl: '{% url "kitten_chat_send" %}',
+  chatPollUrl: '{% url "kitten_chat_messages" %}',
+  csrf: document.querySelector('[name=csrfmiddlewaretoken]').value,
+  ref: '{{ ref_param|escapejs }}' || new URLSearchParams(window.location.search).get('ref') || document.referrer || 'direct',
+};
+
+let sessionId = sessionStorage.getItem('mais_sid');
+if (!sessionId) {
+  sessionId = 'sid_' + Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
+  sessionStorage.setItem('mais_sid', sessionId);
+}
+
+let activeSeconds = 0;
+let maxScroll = 0;
+const seenPosts = new Set();
+let isWindowActive = !document.hidden;
+
+document.addEventListener('visibilitychange', () => {
+  isWindowActive = !document.hidden;
+  if (document.hidden) {
+    sendAnalyticsBeacon('page_hidden');
+  }
+});
+
+setInterval(() => {
+  if (isWindowActive) {
+    activeSeconds += 1;
+  }
+}, 1000);
+
+// Calculate scroll depth
+window.addEventListener('scroll', () => {
+  const scrollTop = window.scrollY || document.documentElement.scrollTop;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  if (docHeight > 0) {
+    const currentPercent = Math.round((scrollTop / docHeight) * 100);
+    if (currentPercent > maxScroll) {
+      maxScroll = Math.min(100, currentPercent);
+    }
+  }
+}, { passive: true });
+
+// Post visibility intersection observer
+if ('IntersectionObserver' in window) {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && entry.intersectionRatio >= 0.35) {
+        const postId = entry.target.getAttribute('id')?.replace('post-', '');
+        if (postId) {
+          seenPosts.add(parseInt(postId));
+        }
+      }
+    });
+  }, { threshold: 0.35 });
+
+  document.querySelectorAll('.feed-card').forEach(card => observer.observe(card));
+}
+
+// Send Beacon / Ping function
+function sendAnalyticsBeacon(action = '') {
+  const payload = {
+    sid: sessionId,
+    seconds: activeSeconds,
+    scroll: maxScroll,
+    ref: document.referrer,
+    utm: TRACK_CONFIG.ref,
+    action: action,
+    posts: Array.from(seenPosts),
+  };
+
+  const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon(TRACK_CONFIG.logUrl, blob);
+  } else {
+    fetch(TRACK_CONFIG.logUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': TRACK_CONFIG.csrf,
+      },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    }).catch(() => {});
+  }
+}
+
+// Periodic ping every 12 seconds
+setInterval(() => {
+  if (isWindowActive) {
+    sendAnalyticsBeacon();
+  }
+}, 12000);
+
+// Initial ping after 2 seconds
+setTimeout(() => sendAnalyticsBeacon(), 2000);
+
+window.addEventListener('beforeunload', () => sendAnalyticsBeacon('unload'));
+
+// Action tracking on CTA clicks
+document.querySelectorAll('.btn-whatsapp').forEach(el => {
+  el.addEventListener('click', () => sendAnalyticsBeacon('whatsapp'));
+});
+document.querySelectorAll('.btn-call').forEach(el => {
+  el.addEventListener('click', () => sendAnalyticsBeacon('call'));
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PURR / LIKE BUTTONS (Sync between desktop and mobile)
+// ─────────────────────────────────────────────────────────────────────────────
 function handlePurr() {
-  const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
-  fetch('{% url "kitten_like" %}', {
+  fetch(TRACK_CONFIG.likeUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      'X-CSRFToken': csrf,
+      'X-CSRFToken': TRACK_CONFIG.csrf,
     },
-    body: ''
+    body: 'sid=' + encodeURIComponent(sessionId)
   })
   .then(r => r.json())
   .then(data => {
@@ -423,33 +583,29 @@ function handlePurr() {
         b.classList.add('pop');
         setTimeout(() => b.classList.remove('pop'), 400);
       });
+      sendAnalyticsBeacon('purr');
     }
   });
 }
 
 const btnPurr = document.getElementById('btnPurr');
-if (btnPurr) {
-  btnPurr.addEventListener('click', handlePurr);
-}
+if (btnPurr) btnPurr.addEventListener('click', handlePurr);
 const btnPurrMobile = document.getElementById('btnPurrMobile');
-if (btnPurrMobile) {
-  btnPurrMobile.addEventListener('click', handlePurr);
-}
+if (btnPurrMobile) btnPurrMobile.addEventListener('click', handlePurr);
 
 // Post Likes
 document.querySelectorAll('.btn-post-like').forEach(btn => {
   btn.addEventListener('click', function() {
     const postId = this.getAttribute('data-post-id');
-    const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
     const countEl = this.querySelector('.post-likes-count');
 
-    fetch('{% url "kitten_like" %}', {
+    fetch(TRACK_CONFIG.likeUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'X-CSRFToken': csrf,
+        'X-CSRFToken': TRACK_CONFIG.csrf,
       },
-      body: 'post_id=' + encodeURIComponent(postId)
+      body: 'post_id=' + encodeURIComponent(postId) + '&sid=' + encodeURIComponent(sessionId)
     })
     .then(r => r.json())
     .then(data => {
@@ -489,6 +645,124 @@ function sharePost(title) {
     navigator.clipboard.writeText(window.location.href);
     alert('Link copiato negli appunti!');
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  IN-SITE ADOPTION CHAT CONTROLLER
+// ─────────────────────────────────────────────────────────────────────────────
+let inquiryToken = localStorage.getItem('mais_inquiry_token') || '';
+let chatPollInterval = null;
+
+function openChatModal(e) {
+  if (e) e.preventDefault();
+  const modal = document.getElementById('adoptionChatModal');
+  modal.classList.add('open');
+  sendAnalyticsBeacon('chat_open');
+
+  const savedName = localStorage.getItem('mais_inquiry_name');
+  const savedContact = localStorage.getItem('mais_inquiry_contact');
+  if (savedName) document.getElementById('chatVisitorName').value = savedName;
+  if (savedContact) document.getElementById('chatVisitorContact').value = savedContact;
+
+  if (inquiryToken) {
+    pollChatMessages();
+    if (!chatPollInterval) {
+      chatPollInterval = setInterval(pollChatMessages, 5000);
+    }
+  }
+  setTimeout(() => document.getElementById('chatVisitorMsg').focus(), 150);
+}
+
+function closeChatModal(e) {
+  if (!e || e.target.id === 'adoptionChatModal' || e.target.classList.contains('chat-close-btn')) {
+    document.getElementById('adoptionChatModal').classList.remove('open');
+    if (chatPollInterval) {
+      clearInterval(chatPollInterval);
+      chatPollInterval = null;
+    }
+  }
+}
+
+function pollChatMessages() {
+  if (!inquiryToken) return;
+  fetch(`${TRACK_CONFIG.chatPollUrl}?token=${encodeURIComponent(inquiryToken)}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.success && data.messages) {
+        renderChatMessages(data.messages);
+      }
+    }).catch(() => {});
+}
+
+function renderChatMessages(messages) {
+  const stream = document.getElementById('chatMessagesStream');
+  const welcome = stream.querySelector('.chat-bubble.admin:first-child');
+  stream.innerHTML = '';
+  if (welcome) stream.appendChild(welcome);
+
+  messages.forEach(m => {
+    const bubble = document.createElement('div');
+    bubble.className = `chat-bubble ${m.sender}`;
+    bubble.innerHTML = `<p>${escapeHtml(m.text)}</p><span class="bubble-time">${m.time}</span>`;
+    stream.appendChild(bubble);
+  });
+  stream.scrollTop = stream.scrollHeight;
+}
+
+function handleSendChatMessage(e) {
+  e.preventDefault();
+  const nameInput = document.getElementById('chatVisitorName');
+  const contactInput = document.getElementById('chatVisitorContact');
+  const msgInput = document.getElementById('chatVisitorMsg');
+  const btn = document.getElementById('chatSendBtn');
+
+  const text = msgInput.value.trim();
+  if (!text) return;
+
+  btn.disabled = true;
+
+  const payload = {
+    token: inquiryToken,
+    name: nameInput.value.trim(),
+    contact: contactInput.value.trim(),
+    message: text,
+  };
+
+  fetch(TRACK_CONFIG.chatSendUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': TRACK_CONFIG.csrf,
+    },
+    body: JSON.stringify(payload),
+  })
+  .then(r => r.json())
+  .then(data => {
+    btn.disabled = false;
+    if (data.success) {
+      inquiryToken = data.token;
+      localStorage.setItem('mais_inquiry_token', inquiryToken);
+      localStorage.setItem('mais_inquiry_name', payload.name);
+      localStorage.setItem('mais_inquiry_contact', payload.contact);
+      msgInput.value = '';
+      renderChatMessages(data.messages);
+      if (!chatPollInterval) {
+        chatPollInterval = setInterval(pollChatMessages, 5000);
+      }
+    } else {
+      alert(data.error || 'Errore durante l\'invio');
+    }
+  })
+  .catch(() => {
+    btn.disabled = false;
+    alert('Errore di connessione. Riprova.');
+  });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }
 </script>
 

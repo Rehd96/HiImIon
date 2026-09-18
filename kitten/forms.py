@@ -45,8 +45,14 @@ class KittenProfileForm(forms.ModelForm):
             # Volantini
             'flyer_header_badge', 'flyer_title', 'flyer_subtitle',
             'flyer_cta_text', 'flyer_cta_sub', 'flyer_contact_label',
+
+            # Notifiche Telegram
+            'telegram_bot_token', 'telegram_chat_id', 'telegram_notifications_enabled',
         ]
         widgets = {
+            'telegram_bot_token': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'es. 123456789:ABCdefGhIJKlmNoPQRstuVWXyz'}),
+            'telegram_chat_id': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'es. 123456789 o @mio_canale'}),
+
             # Text inputs
             'name': forms.TextInput(attrs={'class': 'form-input'}),
             'phone_number': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Es. 340 1234567'}),

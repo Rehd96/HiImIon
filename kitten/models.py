@@ -233,6 +233,22 @@ class KittenProfile(models.Model):
     )
     likes_count = models.PositiveIntegerField(default=0)
 
+    # Telegram Bot Notifications
+    telegram_bot_token = models.CharField(
+        max_length=150,
+        blank=True,
+        help_text='Token del bot Telegram (da @BotFather)'
+    )
+    telegram_chat_id = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text='ID della chat o gruppo Telegram'
+    )
+    telegram_notifications_enabled = models.BooleanField(
+        default=True,
+        verbose_name='Notifiche Telegram attive'
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -327,3 +343,122 @@ class KittenPost(models.Model):
         elif not self.image and not self.video:
             self.media_type = 'text'
         super().save(*args, **kwargs)
+
+
+class KittenVisitorSession(models.Model):
+    kitten = models.ForeignKey(
+        KittenProfile,
+        on_delete=models.CASCADE,
+        related_name='visitor_sessions'
+    )
+    session_id = models.CharField(max_length=64, unique=True, db_index=True)
+    visitor_hash = models.CharField(max_length=64, blank=True)
+    ip_address = models.CharField(max_length=64, blank=True, null=True)
+    user_agent = models.CharField(max_length=400, blank=True)
+    device_type = models.CharField(max_length=20, default='mobile')  # 'mobile', 'tablet', 'desktop'
+    referer = models.CharField(max_length=500, blank=True)
+    utm_source = models.CharField(max_length=100, blank=True)  # 'flyer_a4', 'flyer_a5', 'qr', 'whatsapp', 'direct', etc.
+    total_seconds = models.PositiveIntegerField(default=0)
+    max_scroll_percent = models.PositiveIntegerField(default=0)
+    reached_feed = models.BooleanField(default=False)
+    reached_adoption = models.BooleanField(default=False)
+    clicked_whatsapp = models.BooleanField(default=False)
+    clicked_call = models.BooleanField(default=False)
+    clicked_chat = models.BooleanField(default=False)
+    likes_given = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Sessione Visitatore'
+        verbose_name_plural = 'Sessioni Visitatori'
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f"Sessione {self.session_id[:8]} ({self.device_type} · {self.duration_formatted})"
+
+    @property
+    def duration_formatted(self):
+        mins, secs = divmod(self.total_seconds, 60)
+        if mins > 0:
+            return f"{mins}m {secs}s"
+        return f"{secs}s"
+
+
+class KittenPostImpression(models.Model):
+    session = models.ForeignKey(
+        KittenVisitorSession,
+        on_delete=models.CASCADE,
+        related_name='impressions'
+    )
+    post = models.ForeignKey(
+        KittenPost,
+        on_delete=models.CASCADE,
+        related_name='impressions'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Visualizzazione Post'
+        verbose_name_plural = 'Visualizzazioni Post'
+        unique_together = ('session', 'post')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Impressione Post #{self.post_id} - Sessione {self.session.session_id[:8]}"
+
+
+class KittenInquiry(models.Model):
+    STATUS_CHOICES = [
+        ('new', 'Nuovo 🟡'),
+        ('replied', 'Risposto 🟢'),
+        ('closed', 'Chiuso ⚪'),
+    ]
+
+    kitten = models.ForeignKey(
+        KittenProfile,
+        on_delete=models.CASCADE,
+        related_name='inquiries'
+    )
+    inquiry_token = models.CharField(max_length=64, unique=True, db_index=True)
+    name = models.CharField(max_length=120)
+    contact = models.CharField(max_length=150, help_text='Telefono, WhatsApp o Email')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Richiesta di Adozione / Chat'
+        verbose_name_plural = 'Richieste di Adozione / Chat'
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f"{self.name} ({self.contact}) - {self.created_at:%d/%m %H:%M}"
+
+    @property
+    def last_message(self):
+        return self.messages.order_by('-created_at').first()
+
+
+class KittenInquiryMessage(models.Model):
+    SENDER_CHOICES = [
+        ('visitor', 'Adottante'),
+        ('admin', 'Staff'),
+    ]
+
+    inquiry = models.ForeignKey(
+        KittenInquiry,
+        on_delete=models.CASCADE,
+        related_name='messages'
+    )
+    sender = models.CharField(max_length=10, choices=SENDER_CHOICES, default='visitor')
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Messaggio Chat'
+        verbose_name_plural = 'Messaggi Chat'
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"[{self.get_sender_display()}] {self.text[:40]}"

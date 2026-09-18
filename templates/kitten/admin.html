@@ -30,28 +30,48 @@
     </div>
   </div>
 
-  <!-- Status Cards -->
+  <!-- Analytics & Status Summary Tiles -->
   <div class="tiles">
     <div class="tile">
-      <span class="tile-label">Stato Adozione</span>
-      <span class="tile-value {% if kitten.is_adopted %}good{% else %}active{% endif %}">
-        {% if kitten.is_adopted %}🎉 Adottata!{% else %}In cerca di casa{% endif %}
-      </span>
+      <span class="tile-label">👥 Visitatori Totali</span>
+      <span class="tile-value">{{ total_visitors }}</span>
+      <span style="font-size: 11px; color: var(--accent);">Oggi: {{ today_visitors }}</span>
     </div>
     <div class="tile">
-      <span class="tile-label">Post nel Diario</span>
-      <span class="tile-value">{{ posts.count }}</span>
+      <span class="tile-label">⏱️ Tempo Medio</span>
+      <span class="tile-value" style="color: #60a5fa;">{{ avg_seconds_formatted }}</span>
+      <span style="font-size: 11px; color: var(--dim, #888);">Sessioni attive</span>
     </div>
     <div class="tile">
-      <span class="tile-label">Numero WhatsApp</span>
-      <span class="tile-value {% if not kitten.phone_number %}bad{% endif %}">
-        {{ kitten.phone_number|default:"⚠️ Da inserire" }}
-      </span>
+      <span class="tile-label">📜 Scorrimento Medio</span>
+      <span class="tile-value" style="color: #34d399;">{{ avg_scroll }}%</span>
+      <span style="font-size: 11px; color: var(--dim, #888);">Profondità pagina</span>
     </div>
     <div class="tile">
-      <span class="tile-label">Fusa Ricevute ❤️</span>
-      <span class="tile-value">{{ kitten.likes_count }}</span>
+      <span class="tile-label">💬 Richieste Chat</span>
+      <span class="tile-value {% if new_inquiries_count %}active{% endif %}">{{ inquiries.count }}</span>
+      {% if new_inquiries_count %}
+        <span style="font-size: 11px; color: #f59e0b; font-weight: 700;">🔔 {{ new_inquiries_count }} nuove!</span>
+      {% else %}
+        <span style="font-size: 11px; color: var(--dim, #888);">Nessuna nuova</span>
+      {% endif %}
     </div>
+    <div class="tile">
+      <span class="tile-label">❤️ Fusa Ricevute</span>
+      <span class="tile-value" style="color: #f87171;">{{ kitten.likes_count }}</span>
+      <span style="font-size: 11px; color: var(--dim, #888);">{{ posts.count }} post nel diario</span>
+    </div>
+  </div>
+
+  <!-- Micro conversions bar -->
+  <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; margin-top: 14px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; font-size: 13px;">
+    <span style="color: var(--dim, #888); font-weight: 600;">🎯 Interazioni e Conversioni:</span>
+    <span>📸 Arrivati al Diario: <strong style="color: #fff;">{{ feed_reached }}</strong></span>
+    <span>🏡 Arrivati ad Adozione: <strong style="color: #fff;">{{ adoption_reached }}</strong></span>
+    <span>💬 Chat aperte: <strong style="color: #f59e0b;">{{ chat_opens }}</strong></span>
+    <span>💌 Click WhatsApp: <strong style="color: #10b981;">{{ whatsapp_clicks }}</strong></span>
+    <span>📞 Click Chiamate: <strong style="color: #60a5fa;">{{ call_clicks }}</strong></span>
+    <span style="margin-left: auto; color: var(--dim, #888); font-size: 12px;">📱 {{ mobile_count }} mobile · 💻 {{ desktop_count }} desktop</span>
   </div>
 
   <div class="admin-columns-grid">
@@ -151,6 +171,138 @@
             <p>Nessun post caricato. Usa il modulo sopra per pubblicare il primo momento di Mais!</p>
           </div>
         {% endif %}
+      </section>
+
+      <!-- CHAT & ADOPTION INQUIRIES CARD -->
+      <section class="card" id="inquiries" style="margin-top: 24px; border-color: rgba(245, 158, 11, 0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h2>💬 Richieste di Adozione & Chat ({{ inquiries.count }})</h2>
+          {% if new_inquiries_count %}
+            <span style="background: #f59e0b; color: #000; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px;">
+              {{ new_inquiries_count }} NUOVE
+            </span>
+          {% endif %}
+        </div>
+        <p class="form-help-text">Messaggi inviati dai visitatori dal pulsante "Chatta / Adottami". Puoi rispondere direttamente qui dal sito!</p>
+
+        {% if inquiries %}
+          <div class="inquiries-list">
+            {% for inq in inquiries %}
+            <div class="inquiry-card {% if inq.status == 'new' %}new{% endif %}" id="inquiry-{{ inq.id }}">
+              <div class="inquiry-header">
+                <div>
+                  <span class="inquiry-sender-name">{{ inq.name }}</span>
+                  <span class="inquiry-contact-badge">{{ inq.contact }}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 11px; color: var(--dim, #888);">{{ inq.created_at|date:"d/m/Y H:i" }}</span>
+                  <span style="font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 4px; {% if inq.status == 'new' %}background: rgba(245,158,11,0.2); color: #f59e0b;{% else %}background: rgba(16,185,129,0.2); color: #10b981;{% endif %}">
+                    {{ inq.get_status_display }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Messages Thread -->
+              <div class="inquiry-messages-thread">
+                {% for msg in inq.messages.all %}
+                <div class="inquiry-msg-row {{ msg.sender }}">
+                  <div class="inquiry-msg-text">
+                    {{ msg.text|linebreaksbr }}
+                  </div>
+                  <span class="inquiry-msg-meta">
+                    {% if msg.sender == 'admin' %}Tu (Staff){% else %}{{ inq.name }}{% endif %} · {{ msg.created_at|date:"H:i" }}
+                  </span>
+                </div>
+                {% endfor %}
+              </div>
+
+              <!-- Admin Reply Form -->
+              <form method="post" action="{% url 'kitten_admin_reply_chat' inq.id %}" class="inquiry-reply-form">
+                {% csrf_token %}
+                <input type="text" name="reply_text" class="inquiry-reply-input" placeholder="Scrivi una risposta dal sito..." required>
+                <button type="submit" class="inquiry-reply-btn">Invia Risposta</button>
+              </form>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-hint" style="text-align: center; padding: 24px; color: var(--dim, #888);">
+            <span style="font-size: 32px; display: block; margin-bottom: 6px;">💬</span>
+            <p>Nessuna richiesta di chat ricevuta al momento. Non appena un visitatore cliccherà su "Chatta / Adottami", il messaggio apparirà qui e su Telegram!</p>
+          </div>
+        {% endif %}
+      </section>
+
+      <!-- ANALYTICS: POST LEADERBOARD & VISITOR SESSIONS LOG -->
+      <section class="card" style="margin-top: 24px;">
+        <h2>📊 Statistiche Post & Chi li ha visti</h2>
+        <p class="form-help-text">Classifica delle visualizzazioni effettive di ogni post (rilevate quando il post entra nello schermo).</p>
+
+        <div class="admin-table-wrap">
+          <table class="admin-data-table">
+            <thead>
+              <tr>
+                <th>Post / Momento</th>
+                <th>Visualizzazioni</th>
+                <th>Fusa / Like</th>
+                <th>Tasso Like</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in posts_stats %}
+              <tr>
+                <td><strong>{{ p.post.title|default:p.post.get_tag_display }}</strong></td>
+                <td style="color: #60a5fa; font-weight: 600;">👁️ {{ p.impressions }}</td>
+                <td style="color: #f87171; font-weight: 600;">❤️ {{ p.likes }}</td>
+                <td>
+                  {% if p.impressions > 0 %}
+                    {{ p.likes|floatformat:0 }}%
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" style="color: var(--dim);">Nessun dato ancora disponibile.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="margin-top: 20px; font-size: 15px; color: #fff;">🕒 Ultime Sessioni Visitatori</h3>
+        <p class="form-help-text">Tempo trascorso, scorrimento e interazioni di chi naviga la pagina di Mais.</p>
+        <div class="admin-table-wrap">
+          <table class="admin-data-table" style="font-size: 12px;">
+            <thead>
+              <tr>
+                <th>Ora</th>
+                <th>Disp.</th>
+                <th>Fonte</th>
+                <th>Tempo</th>
+                <th>Scroll</th>
+                <th>Post Visti</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in recent_sessions %}
+              <tr>
+                <td>{{ s.created_at|date:"d/m H:i" }}</td>
+                <td>
+                  {% if s.device_type == 'mobile' %}📱 Mobile{% elif s.device_type == 'tablet' %}📱 Tablet{% else %}💻 PC{% endif %}
+                </td>
+                <td style="max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  {{ s.utm_source|default:s.referer|default:"Diretto" }}
+                </td>
+                <td style="color: #60a5fa; font-weight: 600;">{{ s.duration_formatted }}</td>
+                <td style="color: #34d399;">{{ s.max_scroll_percent }}%</td>
+                <td>{{ s.impressions.count }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="6" style="color: var(--dim);">Nessuna sessione registrata.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <!-- QR & FLYER QUICK CARD -->
@@ -506,6 +658,44 @@
           <div class="form-group">
             <label for="id_flyer_contact_label">Etichetta Contatto Finale:</label>
             {{ profile_form.flyer_contact_label }}
+          </div>
+        </section>
+
+        <!-- 9. NOTIFICHE TELEGRAM PER NUOVE RICHIESTE -->
+        <section class="card" id="telegram" style="margin-top: 20px; border-color: rgba(56, 189, 248, 0.4);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h2>🤖 9. Notifiche Telegram per Nuove Richieste Chat</h2>
+            <span style="font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 600;">Tempo Reale</span>
+          </div>
+          <p class="form-help-text">
+            Ricevi un avviso istantaneo sul tuo Telegram ogni volta che un visitatore scrive un messaggio dal pulsante "Chatta / Adottami".
+          </p>
+
+          <div class="form-group highlight-box" style="margin-bottom: 16px;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+              {{ profile_form.telegram_notifications_enabled }}
+              <strong style="color: #fff;">Attiva notifiche Telegram automatiche</strong>
+            </label>
+            <span class="field-desc">Quando abilitato, ogni nuovo messaggio invierà un alert Telegram con nome, recapito e testo del messaggio.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="id_telegram_bot_token">Token del Bot Telegram:</label>
+            {{ profile_form.telegram_bot_token }}
+            <span class="field-desc">Creato con @BotFather su Telegram (es. <code>123456789:ABCdefGhIJKlmNoPQRstuVWXyz</code>).</span>
+          </div>
+
+          <div class="form-group">
+            <label for="id_telegram_chat_id">Telegram Chat ID personale o gruppo:</label>
+            {{ profile_form.telegram_chat_id }}
+            <span class="field-desc">Il tuo ID Telegram numerico (puoi scoprirlo scrivendo a <code>@userinfobot</code> su Telegram).</span>
+          </div>
+
+          <div style="margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <span style="font-size: 12px; color: var(--dim, #888);">Verifica che il bot riesca a inviarti messaggi:</span>
+            <button type="submit" formaction="{% url 'kitten_telegram_test' %}" formmethod="post" class="btn-panel-action" style="background: #0284c7; border-color: #0369a1; color: #fff; font-size: 13px; padding: 8px 16px;">
+              🚀 Invia Notifica Telegram di Prova
+            </button>
           </div>
         </section>
 
