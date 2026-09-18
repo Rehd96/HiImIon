@@ -457,7 +457,7 @@ const TRACK_CONFIG = {
   likeUrl: '{% url "kitten_like" %}',
   chatSendUrl: '{% url "kitten_chat_send" %}',
   chatPollUrl: '{% url "kitten_chat_messages" %}',
-  csrf: document.querySelector('[name=csrfmiddlewaretoken]').value,
+  csrf: '{{ csrf_token }}',
   ref: '{{ ref_param|escapejs }}' || new URLSearchParams(window.location.search).get('ref') || document.referrer || 'direct',
 };
 

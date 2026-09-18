@@ -10,6 +10,7 @@ from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
 from .forms import KittenPostForm, KittenProfileForm
@@ -101,6 +102,7 @@ def kitten_redirect(request):
     return redirect('kitten_detail')
 
 
+@csrf_exempt
 @require_POST
 def kitten_like(request, slug='mais'):
     profile = get_object_or_404(KittenProfile, slug=slug)
@@ -171,6 +173,7 @@ def kitten_flyer_a5(request, slug='mais'):
 #  ANALYTICS & BEACON LOGGING (Cookieless, GDPR-compliant)
 # ─────────────────────────────────────────────────────────────────────────────
 
+@csrf_exempt
 @require_POST
 def kitten_analytics_log(request, slug='mais'):
     """
@@ -280,6 +283,7 @@ def kitten_analytics_log(request, slug='mais'):
 #  IN-SITE ADOPTION CHAT & TELEGRAM NOTIFICATIONS
 # ─────────────────────────────────────────────────────────────────────────────
 
+@csrf_exempt
 @require_POST
 def kitten_chat_send(request, slug='mais'):
     """
