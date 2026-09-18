@@ -1,0 +1,148 @@
+{% load static %}<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Locandina A4 Adozione — {{ kitten.name }} 🐾</title>
+<link rel="stylesheet" href="{% static 'css/flyer.css' %}">
+</head>
+<body class="flyer-body a4-body">
+
+<!-- Print Controls (Hidden on paper) -->
+<aside class="print-toolbar no-print">
+  <div class="toolbar-inner">
+    <div class="toolbar-info">
+      <strong>📄 Anteprima Stampa Locandina A4</strong>
+      <span>Formato A4 con 8 tagliandini a strappo. Premi il tasto qui a fianco per stampare o salvare come PDF.</span>
+    </div>
+    <div class="toolbar-actions">
+      <button onclick="window.print()" class="btn-print">
+        🖨️ Stampa / Salva PDF
+      </button>
+      <a href="{% url 'kitten_detail' %}" class="btn-back">
+        Torna al sito
+      </a>
+    </div>
+  </div>
+</aside>
+
+<!-- The Printable A4 Sheet -->
+<div class="page a4-page">
+
+  <!-- Header Banner -->
+  <header class="flyer-header">
+    <div class="header-badge">{{ kitten.flyer_header_badge|default:"❤️ ADOZIONE DEL CUORE ❤️" }}</div>
+    <h1 class="flyer-title">{{ kitten.flyer_title|default:"CERCASI FAMIGLIA PER SEMPRE! 🐾" }}</h1>
+    <p class="flyer-subtitle">{{ kitten.flyer_subtitle|default:kitten.tagline }}</p>
+  </header>
+
+  <!-- Main Hero Body (Photo + Specs) -->
+  <div class="flyer-main">
+    <div class="flyer-photo-box">
+      <img src="{{ kitten.cover_url }}" alt="Foto di {{ kitten.name }}" class="flyer-cat-img">
+      <div class="photo-caption-badge">
+        <span>🐾 {{ kitten.name }} · {{ kitten.age_text }}</span>
+      </div>
+    </div>
+
+    <div class="flyer-info-box">
+      <div class="name-ribbon">
+        <h2>Mi chiamo <span class="highlight">{{ kitten.name|upper }}</span>!</h2>
+        <span class="sub-name">(mice ➔ topo ➔ Mais 🌽)</span>
+      </div>
+
+      <ul class="flyer-points">
+        <li>
+          <span class="bullet-icon">🐱</span>
+          <div>
+            <strong>{{ kitten.get_gender_display }} · {{ kitten.age_text }}</strong>
+            <span>{{ kitten.color }}</span>
+          </div>
+        </li>
+        {% if kitten.bullet_1 %}
+        <li>
+          <span class="bullet-icon">⚡</span>
+          <div>
+            <strong>{{ kitten.bullet_1 }}</strong>
+          </div>
+        </li>
+        {% endif %}
+        {% if kitten.bullet_2 %}
+        <li>
+          <span class="bullet-icon">🐟</span>
+          <div>
+            <strong>{{ kitten.bullet_2 }}</strong>
+          </div>
+        </li>
+        {% endif %}
+        {% if kitten.bullet_3 %}
+        <li>
+          <span class="bullet-icon">🚽</span>
+          <div>
+            <strong>{{ kitten.bullet_3 }}</strong>
+          </div>
+        </li>
+        {% endif %}
+        <li>
+          <span class="bullet-icon">🩺</span>
+          <div>
+            <strong>{{ kitten.health_step1_title }}</strong>
+            <span>{{ kitten.health_step1_desc|truncatechars:80 }}</span>
+          </div>
+        </li>
+        <li>
+          <span class="bullet-icon">📍</span>
+          <div>
+            <strong>{{ kitten.location }}</strong>
+            <span>Disponibile per adozione responsabile nelle vicinanze</span>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Big Interactive QR Code Box -->
+  <div class="flyer-qr-banner">
+    <div class="qr-code-holder">
+      <img src="{% url 'kitten_qr' %}" alt="QR code per il video di Mais" class="qr-image">
+    </div>
+    <div class="qr-text-holder">
+      <h3>{{ kitten.flyer_cta_text|default:"📲 Inquadra il QR con il telefono!" }}</h3>
+      <p>{{ kitten.flyer_cta_sub|default:"Guarda i video mentre gioca, tutte le foto e la sua storia completa su:" }}</p>
+      <div class="web-url-pill">
+        🌐 <strong>labustagialla.it/mais/</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact Callout -->
+  <div class="flyer-contact-bar">
+    <span class="contact-label">{{ kitten.flyer_contact_label|default:"Per informazioni e per conoscerla:" }}</span>
+    <span class="contact-number">
+      📞 WhatsApp / Tel: <strong>{{ kitten.phone_number|default:"Contatta tramite il sito" }}</strong>
+    </span>
+  </div>
+
+  <!-- Cut Line for Tear-off Tabs -->
+  <div class="tear-cut-line">
+    <span class="cut-scissors">✂ Taglia lungo le linee tratteggiate qui sotto per i tagliandi da staccare ✂</span>
+  </div>
+
+  <!-- 8 Tear-off Tabs at Bottom -->
+  <div class="tear-tabs-container">
+    {% for i in "12345678" %}
+    <div class="tear-tab">
+      <div class="tab-content">
+        <span class="tab-title">🐾 Adotta {{ kitten.name|upper }}!</span>
+        <span class="tab-sub">{{ kitten.location|truncatechars:20 }}</span>
+        <span class="tab-phone">📞 {{ kitten.phone_number|default:"labustagialla.it" }}</span>
+        <img src="{% url 'kitten_qr' %}" alt="QR" class="tab-qr">
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+
+</body>
+</html>

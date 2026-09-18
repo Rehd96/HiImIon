@@ -6,6 +6,11 @@
 <main class="login-wrap">
   <form class="login-card" method="post">
     {% csrf_token %}
+    {% if next %}
+    <input type="hidden" name="next" value="{{ next }}">
+    {% elif request.GET.next %}
+    <input type="hidden" name="next" value="{{ request.GET.next }}">
+    {% endif %}
     <h1>Panel</h1>
     <p class="login-note">Analytics for labustagialla.it</p>
 

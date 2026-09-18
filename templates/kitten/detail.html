@@ -1,0 +1,496 @@
+{% load static %}<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adotta {{ kitten.name }} 🐾 — Piccola panterina cerca casa | labustagialla.it</title>
+<meta name="description" content="Incontra {{ kitten.name }}, una dolcissima gattina nera di 7 settimane a Pescara (zona Aeroporto). Guarda le sue foto, i video e scopri la sua storia per adottarla!">
+
+<!-- Open Graph / WhatsApp Preview -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Adotta {{ kitten.name }} 🐾 Piccola panterina di 7 settimane a Pescara">
+<meta property="og:description" content="Completamente nera, giocherellona, usa la lettiera e mangia pappa umida. Guarda foto e video e aiutala a trovare una famiglia per sempre!">
+<meta property="og:url" content="{{ production_url }}">
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ kitten.cover_url }}">
+
+<link rel="stylesheet" href="{% static 'css/kitten.css' %}">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+</head>
+<body class="kitten-theme">
+
+<!-- Ambient glowing backdrop -->
+<div class="glow-bg" aria-hidden="true"></div>
+
+<!-- Top header navigation -->
+<header class="k-topbar">
+  <div class="k-container k-nav-row">
+    <a href="{% url 'home' %}" class="k-brand" title="Torna a labustagialla.it">
+      <span class="k-dot"></span>
+      <span>labustagialla<span class="dim">.it</span></span>
+    </a>
+    <div class="k-nav-actions">
+      {% if is_admin %}
+      <a href="{% url 'kitten_admin' %}" class="btn-admin-pill" title="Pannello di gestione e modifica testi">
+        ⚙️ Modifica Testi & Carica Media
+      </a>
+      {% endif %}
+      <a href="#feed" class="k-pill-link">📸 Video & Foto</a>
+      <a href="#adozione" class="k-pill-link highlight">💌 Adottami</a>
+    </div>
+  </div>
+</header>
+
+<main class="k-main">
+
+  <!-- Status banner if adopted -->
+  {% if kitten.is_adopted %}
+  <div class="k-adopted-banner">
+    {{ kitten.adopted_banner_text|default:"🎉 MERAVIGLIOSA NOTIZIA! Mais ha trovato la sua famiglia per sempre! Grazie a tutti per l'affetto! ❤️" }}
+  </div>
+  {% endif %}
+
+  <!-- HERO SECTION -->
+  <section class="k-hero k-container">
+    <div class="k-hero-content">
+      <div class="k-badge-wrapper">
+        <span class="badge-status {% if kitten.is_adopted %}adopted{% else %}looking{% endif %}">
+          {% if kitten.is_adopted %}🎉 Adottata felicemente{% else %}{{ kitten.hero_badge|default:"🐾 In cerca di una famiglia d'amore" }}{% endif %}
+        </span>
+        <span class="badge-tag">{{ kitten.hero_location_badge|default:kitten.location }}</span>
+      </div>
+
+      <h1 class="k-title">{{ kitten.hero_title|default:"Ciao, mi chiamo Mais! 🐾" }}</h1>
+      <p class="k-tagline">{{ kitten.tagline }}</p>
+
+      <!-- Key Quick Specs -->
+      <div class="k-quick-specs">
+        <div class="spec-card">
+          <span class="spec-icon">♀</span>
+          <div class="spec-text">
+            <strong>Sesso</strong>
+            <span>{{ kitten.spec_gender|default:kitten.gender }}</span>
+          </div>
+        </div>
+        <div class="spec-card">
+          <span class="spec-icon">🎂</span>
+          <div class="spec-text">
+            <strong>Età</strong>
+            <span>{{ kitten.spec_age|default:kitten.age_text }}</span>
+          </div>
+        </div>
+        <div class="spec-card">
+          <span class="spec-icon">🖤</span>
+          <div class="spec-text">
+            <strong>Mantello</strong>
+            <span>{{ kitten.spec_color|default:kitten.color }}</span>
+          </div>
+        </div>
+        <div class="spec-card">
+          <span class="spec-icon">📍</span>
+          <div class="spec-text">
+            <strong>Dove si trova</strong>
+            <span>{{ kitten.spec_location|default:kitten.location }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action CTA Buttons -->
+      <div class="k-hero-actions">
+        {% if kitten.phone_number %}
+          <a href="{{ kitten.whatsapp_url }}" target="_blank" rel="noopener" class="btn-cta btn-whatsapp">
+            <svg class="icon-svg" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+              <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.073.043.419-.101.824z"/>
+              <path d="M12 2C6.477 2 2 6.477 2 12c0 1.891.524 3.662 1.435 5.176L2 22l4.981-1.306A9.957 9.957 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.2c-1.636 0-3.153-.473-4.437-1.29l-.318-.204-2.957.776.789-2.883-.207-.33A8.172 8.172 0 013.8 12c0-4.521 3.679-8.2 8.2-8.2s8.2 3.679 8.2 8.2-3.679 8.2-8.2 8.2z"/>
+            </svg>
+            <span>Scrivi su WhatsApp</span>
+          </a>
+          <a href="tel:{{ kitten.phone_number }}" class="btn-cta btn-call">
+            📞 Chiama: {{ kitten.phone_number }}
+          </a>
+        {% else %}
+          <div class="phone-notice">
+            <span>ℹ️ Numero di contatto in fase di configurazione.</span>
+            {% if is_admin %}
+              <a href="{% url 'kitten_admin' %}" class="btn-cta btn-call" style="margin-top: 8px;">
+                👉 Inserisci il tuo numero dal pannello
+              </a>
+            {% endif %}
+          </div>
+        {% endif %}
+
+        <!-- Purr / Like Live Button -->
+        <button type="button" class="btn-purr" id="btnPurr" data-slug="{{ kitten.slug }}">
+          <span class="purr-heart">❤️</span>
+          <span class="purr-text">Fai le fusa a Mais!</span>
+          <span class="purr-count purr-counter-target" id="purrCounter">{{ kitten.likes_count }}</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Hero Image Card -->
+    <div class="k-hero-visual">
+      <div class="photo-frame">
+        <img src="{{ kitten.cover_url }}" alt="Foto di {{ kitten.name }}" class="hero-cat-img" id="heroPhoto">
+        <div class="photo-tag-overlay">
+          <span>🐾 {{ kitten.name }} · La panterina</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STORY & HIGHLIGHTS -->
+  <section class="k-section k-container" id="chi-sono">
+    <div class="k-grid-2">
+
+      <div class="k-card bio-card">
+        <div class="card-icon">{{ kitten.story_icon|default:"🌽" }}</div>
+        <h2>{{ kitten.story_title|default:"Perché mi chiamo Mais?" }}</h2>
+        <div class="prose">
+          {{ kitten.bio_intro|linebreaks }}
+        </div>
+        {% if kitten.story_quote %}
+        <div class="quote-box">
+          <p>{{ kitten.story_quote }}</p>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="k-card personality-card">
+        <div class="card-icon">{{ kitten.personality_icon|default:"⚡" }}</div>
+        <h2>{{ kitten.personality_title|default:"Carattere e Superpoteri" }}</h2>
+        <div class="prose">
+          {{ kitten.personality|linebreaks }}
+        </div>
+        <ul class="check-list">
+          {% if kitten.bullet_1 %}<li>{{ kitten.bullet_1 }}</li>{% endif %}
+          {% if kitten.bullet_2 %}<li>{{ kitten.bullet_2 }}</li>{% endif %}
+          {% if kitten.bullet_3 %}<li>{{ kitten.bullet_3 }}</li>{% endif %}
+          {% if kitten.bullet_4 %}<li>{{ kitten.bullet_4 }}</li>{% endif %}
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- HEALTH STATUS CARD -->
+  <section class="k-section k-container">
+    <div class="k-card health-card">
+      <div class="health-header">
+        <div class="card-icon">🩺</div>
+        <div>
+          <h2>{{ kitten.health_title|default:"Stato di Salute & Visite" }}</h2>
+          <p class="subtitle">{{ kitten.health_subtitle|default:"Trasparenza totale per chi deciderà di accoglierla" }}</p>
+        </div>
+      </div>
+
+      <div class="health-grid">
+        <div class="health-step {% if kitten.health_step1_done %}done{% else %}todo{% endif %}">
+          <span class="step-badge">{{ kitten.health_step1_badge|default:"Fatto ✓" }}</span>
+          <h3>{{ kitten.health_step1_title }}</h3>
+          <p>{{ kitten.health_step1_desc }}</p>
+        </div>
+        <div class="health-step {% if kitten.health_step2_done %}done{% else %}todo{% endif %}">
+          <span class="step-badge">{{ kitten.health_step2_badge|default:"Fatto ✓" }}</span>
+          <h3>{{ kitten.health_step2_title }}</h3>
+          <p>{{ kitten.health_step2_desc }}</p>
+        </div>
+        <div class="health-step {% if kitten.health_step3_done %}done{% else %}todo{% endif %}">
+          <span class="step-badge">{{ kitten.health_step3_badge|default:"Da completare" }}</span>
+          <h3>{{ kitten.health_step3_title }}</h3>
+          <p>{{ kitten.health_step3_desc }}</p>
+        </div>
+        <div class="health-step {% if kitten.health_step4_done %}done{% else %}todo{% endif %}">
+          <span class="step-badge">{{ kitten.health_step4_badge|default:"Futuro" }}</span>
+          <h3>{{ kitten.health_step4_title }}</h3>
+          <p>{{ kitten.health_step4_desc }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIVE FEED / BLOG OF MAIS -->
+  <section class="k-section k-container" id="feed">
+    <div class="section-title-row">
+      <div>
+        <h2 class="section-heading">{{ kitten.feed_title|default:"Il Diario di Mais 📸" }}</h2>
+        <p class="section-sub">{{ kitten.feed_subtitle|default:"Scatti spontanei, video buffi e momenti quotidiani" }}</p>
+      </div>
+      {% if is_admin %}
+      <a href="{% url 'kitten_admin' %}#nuovo-post" class="btn-admin-small">
+        ➕ Aggiungi Foto o Video
+      </a>
+      {% endif %}
+    </div>
+
+    {% if posts %}
+      <div class="feed-grid">
+        {% for post in posts %}
+        <article class="feed-card" id="post-{{ post.id }}">
+          
+          <!-- Media Header -->
+          {% if post.video %}
+          <div class="feed-video-wrap">
+            <video controls playsinline preload="metadata" class="feed-video" {% if post.video_poster %}poster="{{ post.video_poster.url }}"{% endif %}>
+              <source src="{{ post.video.url }}" type="video/mp4">
+              Il tuo browser non supporta la riproduzione video.
+            </video>
+            <span class="media-type-badge video">▶ Video</span>
+          </div>
+          {% elif post.image %}
+          <div class="feed-image-wrap" onclick="openLightbox('{{ post.image.url }}', '{{ post.title|default:post.caption|escapejs }}')">
+            <img src="{{ post.image.url }}" alt="{{ post.title|default:'Foto di Mais' }}" loading="lazy" class="feed-image">
+            <span class="media-type-badge photo">📷 Foto</span>
+          </div>
+          {% endif %}
+
+          <!-- Content Body -->
+          <div class="feed-body">
+            <div class="feed-meta">
+              <span class="feed-tag tag-{{ post.tag }}">{{ post.get_tag_display }}</span>
+              <time datetime="{{ post.created_at|date:'Y-m-d' }}">{{ post.created_at|date:"d M Y" }}</time>
+            </div>
+
+            {% if post.title %}
+            <h3 class="feed-title">{{ post.title }}</h3>
+            {% endif %}
+
+            {% if post.caption %}
+            <p class="feed-caption">{{ post.caption|linebreaksbr }}</p>
+            {% endif %}
+
+            <div class="feed-footer">
+              <button type="button" class="btn-post-like" data-post-id="{{ post.id }}" data-slug="{{ kitten.slug }}">
+                <span class="heart-icon">❤️</span>
+                <span class="post-likes-count">{{ post.likes }}</span>
+              </button>
+              <button type="button" class="btn-share-post" onclick="sharePost('{{ post.title|default:"Guarda Mais!"|escapejs }}')">
+                Condividi ↗
+              </button>
+            </div>
+          </div>
+
+        </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <!-- Empty State for Feed -->
+      <div class="feed-empty-card">
+        <div class="empty-icon">🐱💤</div>
+        <h3>{{ kitten.feed_empty_title|default:"Il diario fotografico è in arrivo!" }}</h3>
+        <p>{{ kitten.feed_empty_desc|default:"Mais sta facendo un sonnellino dopo aver mangiato la pappa umida. I primi video e le foto delle sue avventure verranno caricati a breve!" }}</p>
+        {% if is_admin %}
+        <a href="{% url 'kitten_admin' %}#nuovo-post" class="btn-cta btn-primary" style="margin-top: 16px;">
+          📸 Carica la prima foto o video di Mais
+        </a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- ADOPTION REQUIREMENTS & CTA -->
+  <section class="k-section k-container" id="adozione">
+    <div class="k-card adoption-card">
+      <div class="adoption-badge">{{ kitten.adoption_badge|default:"🏡 Amore Consapevole" }}</div>
+      <h2>{{ kitten.adoption_title|default:"Requisiti per l'adozione" }}</h2>
+      <p class="adoption-intro">{{ kitten.adoption_intro }}</p>
+
+      <div class="prose req-prose">
+        {{ kitten.adoption_requirements|linebreaks }}
+      </div>
+
+      <div class="adoption-box-action">
+        <h3>{{ kitten.adoption_cta_title|default:"Vuoi venire a conoscere Mais di persona?" }}</h3>
+        <p>{{ kitten.adoption_cta_desc }}</p>
+
+        {% if kitten.phone_number %}
+        <div class="cta-cluster">
+          <a href="{{ kitten.whatsapp_url }}" target="_blank" rel="noopener" class="btn-cta btn-whatsapp large">
+            <span>💌 Scrivici su WhatsApp</span>
+          </a>
+          <a href="tel:{{ kitten.phone_number }}" class="btn-cta btn-call large">
+            <span>📞 Chiama {{ kitten.phone_number }}</span>
+          </a>
+        </div>
+        {% else %}
+        <p class="alert-phone">Configura il numero di telefono nel pannello di amministrazione per abilitare il contatto diretto.</p>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <!-- FLYERS & PROMO DOWNLOADS -->
+  <section class="k-section k-container" id="volantini">
+    <div class="k-card flyer-promo-card">
+      <div class="flyer-promo-content">
+        <div class="card-icon">🖨️</div>
+        <h2>{{ kitten.flyer_promo_title|default:"Aiutaci con il passaparola: scarica i volantini!" }}</h2>
+        <p>{{ kitten.flyer_promo_desc|default:"Vuoi aiutarci a diffondere l'annuncio? Abbiamo creato delle locandine con una grafica accattivante, la foto di Mais e il QR code che rimanda a questa pagina con tutti i suoi video!" }}</p>
+        <div class="flyer-links">
+          <a href="{% url 'kitten_flyer_a4' %}" target="_blank" class="btn-flyer">
+            📄 <strong>Locandina A4</strong> (con linguette strappabili)
+          </a>
+          <a href="{% url 'kitten_flyer_a5' %}" target="_blank" class="btn-flyer">
+            📇 <strong>Flyer A5</strong> (formato cartolina / bacheca)
+          </a>
+          <a href="{% url 'kitten_qr' %}" download="qr_mais.png" class="btn-flyer outline">
+            📲 Scarica QR Code
+          </a>
+        </div>
+      </div>
+      <div class="qr-preview-box">
+        <img src="{% url 'kitten_qr' %}" alt="QR code per la pagina di Mais" class="qr-img">
+        <span>Inquadra per aprire su smartphone</span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Lightbox Modal for Fullscreen Photos -->
+<div id="lightboxModal" class="lightbox-modal" onclick="closeLightbox(event)">
+  <div class="lightbox-content">
+    <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+    <img id="lightboxImg" src="" alt="Anteprima">
+    <p id="lightboxCaption" class="lightbox-caption"></p>
+  </div>
+</div>
+
+<!-- Floating Mobile Sticky Contact Bar (Visible only on < 768px) -->
+<nav class="k-mobile-sticky-bar" aria-label="Contatti rapidi adozione">
+  {% if kitten.phone_number %}
+    <a href="{{ kitten.whatsapp_url }}" target="_blank" rel="noopener" class="mobile-bar-btn whatsapp" title="Scrivi su WhatsApp">
+      <svg class="mobile-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.073.043.419-.101.824z"/>
+        <path d="M12 2C6.477 2 2 6.477 2 12c0 1.891.524 3.662 1.435 5.176L2 22l4.981-1.306A9.957 9.957 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.2c-1.636 0-3.153-.473-4.437-1.29l-.318-.204-2.957.776.789-2.883-.207-.33A8.172 8.172 0 013.8 12c0-4.521 3.679-8.2 8.2-8.2s8.2 3.679 8.2 8.2-3.679 8.2-8.2 8.2z"/>
+      </svg>
+      <span>WhatsApp</span>
+    </a>
+    <a href="tel:{{ kitten.phone_number }}" class="mobile-bar-btn call" title="Chiama al telefono">
+      <span>📞 Chiama</span>
+    </a>
+  {% else %}
+    <a href="#adozione" class="mobile-bar-btn whatsapp">
+      <span>💌 Contattaci</span>
+    </a>
+  {% endif %}
+  <button type="button" class="mobile-bar-btn purr" id="btnPurrMobile" data-slug="{{ kitten.slug }}">
+    <span class="purr-heart">❤️</span>
+    <span class="mobile-purr-text">Fusa</span>
+    <span class="mobile-purr-badge purr-counter-target" id="purrCounterMobile">{{ kitten.likes_count }}</span>
+  </button>
+</nav>
+
+<footer class="k-footer">
+  <div class="k-container k-footer-inner">
+    <div>
+      <p class="footer-title">🐾 Progetto Adozione Mais</p>
+      <p class="footer-desc">Una pagina d'amore ospitata con cura su <a href="{% url 'home' %}">labustagialla.it</a>.</p>
+    </div>
+    <div class="footer-links">
+      <a href="#feed">Diario & Foto</a>
+      <a href="#adozione">Requisiti</a>
+      <a href="{% url 'kitten_flyer_a4' %}">Volantini</a>
+      {% if is_admin %}
+      <a href="{% url 'kitten_admin' %}">Admin Mais</a>
+      {% endif %}
+    </div>
+  </div>
+</footer>
+
+<!-- CSRF Token for Likes -->
+{% csrf_token %}
+
+<script>
+// Live Purr / Like button (Desktop & Mobile)
+function handlePurr() {
+  const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  fetch('{% url "kitten_like" %}', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRFToken': csrf,
+    },
+    body: ''
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      document.querySelectorAll('.purr-counter-target').forEach(el => {
+        el.textContent = data.likes;
+      });
+      document.querySelectorAll('#btnPurr, #btnPurrMobile').forEach(b => {
+        b.classList.add('pop');
+        setTimeout(() => b.classList.remove('pop'), 400);
+      });
+    }
+  });
+}
+
+const btnPurr = document.getElementById('btnPurr');
+if (btnPurr) {
+  btnPurr.addEventListener('click', handlePurr);
+}
+const btnPurrMobile = document.getElementById('btnPurrMobile');
+if (btnPurrMobile) {
+  btnPurrMobile.addEventListener('click', handlePurr);
+}
+
+// Post Likes
+document.querySelectorAll('.btn-post-like').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const postId = this.getAttribute('data-post-id');
+    const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const countEl = this.querySelector('.post-likes-count');
+
+    fetch('{% url "kitten_like" %}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': csrf,
+      },
+      body: 'post_id=' + encodeURIComponent(postId)
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        countEl.textContent = data.likes;
+        btn.classList.add('pop');
+        setTimeout(() => btn.classList.remove('pop'), 400);
+      }
+    });
+  });
+});
+
+// Lightbox logic
+function openLightbox(url, caption) {
+  const modal = document.getElementById('lightboxModal');
+  const img = document.getElementById('lightboxImg');
+  const cap = document.getElementById('lightboxCaption');
+  img.src = url;
+  cap.textContent = caption || '';
+  modal.classList.add('open');
+}
+
+function closeLightbox(e) {
+  if (!e || e.target.id === 'lightboxModal' || e.target.classList.contains('lightbox-close')) {
+    document.getElementById('lightboxModal').classList.remove('open');
+  }
+}
+
+function sharePost(title) {
+  if (navigator.share) {
+    navigator.share({
+      title: title,
+      text: 'Guarda Mais, cucciola di 7 settimane in cerca di adozione a Pescara!',
+      url: window.location.href
+    }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(window.location.href);
+    alert('Link copiato negli appunti!');
+  }
+}
+</script>
+
+</body>
+</html>

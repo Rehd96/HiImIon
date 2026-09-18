@@ -16,13 +16,19 @@
   {% if user.is_authenticated %}
   <nav class="panel-nav">
     <a href="{% url 'panel_dashboard' %}" {% if request.resolver_match.url_name == 'panel_dashboard' %}class="on"{% endif %}>Overview</a>
+    <a href="{% url 'kitten_admin' %}" {% if 'kitten' in request.resolver_match.url_name %}class="on"{% endif %}>🐾 Mais</a>
     <a href="{% url 'panel_views' %}" {% if request.resolver_match.url_name == 'panel_views' %}class="on"{% endif %}>Raw log</a>
-    <a href="{% url 'home' %}">Site ↗</a>
+    {% if 'kitten' in request.resolver_match.url_name %}
+      <a href="{% url 'kitten_detail' %}" style="color: #f59e0b; font-weight: 700;">🐾 Torna a Mais (/mais/) ↗</a>
+    {% else %}
+      <a href="{% url 'home' %}">Site ↗</a>
+    {% endif %}
   </nav>
   <div class="panel-user">
     <span>{{ user.username }}</span>
     <form method="post" action="{% url 'panel_logout' %}">
       {% csrf_token %}
+      <input type="hidden" name="next" value="{% if 'kitten' in request.resolver_match.url_name %}{% url 'kitten_detail' %}{% else %}{% url 'home' %}{% endif %}">
       <button type="submit">Log out</button>
     </form>
   </div>

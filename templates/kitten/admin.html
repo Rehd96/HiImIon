@@ -1,0 +1,526 @@
+{% extends "panel/base.html" %}
+{% load static %}
+
+{% block title %}Gestione e Modifica Testi Mais 🐾{% endblock %}
+
+{% block content %}
+<main class="panel kitten-admin-panel">
+
+  <div style="margin-bottom: 16px;">
+    <a href="{% url 'kitten_detail' %}" style="display: inline-flex; align-items: center; gap: 8px; color: var(--accent, #f59e0b); text-decoration: none; font-size: 14px; font-weight: 600; background: rgba(245, 158, 11, 0.1); padding: 6px 14px; border-radius: 999px; border: 1px solid rgba(245, 158, 11, 0.25);">
+      ← Torna alla pagina di Mais (/mais/)
+    </a>
+  </div>
+
+  <div class="panel-head">
+    <div>
+      <h1>Gestione & Editor Contenuti: {{ kitten.name }} 🐾</h1>
+      <p class="panel-sub">Ogni singola parte del sito (descrizioni, titoli, tappe sanitarie, citazioni e volantini) è modificabile qui sotto.</p>
+    </div>
+    <div class="panel-actions">
+      <a href="{% url 'kitten_detail' %}" class="btn-panel-action primary">
+        🐾 Vai a Mais (/mais/) ↗
+      </a>
+      <a href="{% url 'kitten_flyer_a4' %}" target="_blank" class="btn-panel-action">
+        📄 Locandina A4 ↗
+      </a>
+      <a href="{% url 'kitten_flyer_a5' %}" target="_blank" class="btn-panel-action">
+        📇 Flyer A5 ↗
+      </a>
+    </div>
+  </div>
+
+  <!-- Status Cards -->
+  <div class="tiles">
+    <div class="tile">
+      <span class="tile-label">Stato Adozione</span>
+      <span class="tile-value {% if kitten.is_adopted %}good{% else %}active{% endif %}">
+        {% if kitten.is_adopted %}🎉 Adottata!{% else %}In cerca di casa{% endif %}
+      </span>
+    </div>
+    <div class="tile">
+      <span class="tile-label">Post nel Diario</span>
+      <span class="tile-value">{{ posts.count }}</span>
+    </div>
+    <div class="tile">
+      <span class="tile-label">Numero WhatsApp</span>
+      <span class="tile-value {% if not kitten.phone_number %}bad{% endif %}">
+        {{ kitten.phone_number|default:"⚠️ Da inserire" }}
+      </span>
+    </div>
+    <div class="tile">
+      <span class="tile-label">Fusa Ricevute ❤️</span>
+      <span class="tile-value">{{ kitten.likes_count }}</span>
+    </div>
+  </div>
+
+  <div class="admin-columns-grid">
+
+    <!-- LEFT COLUMN: Quick Media Upload & Post List -->
+    <div class="admin-col-left">
+
+      <!-- QUICK UPLOAD CARD -->
+      <section class="card" id="nuovo-post">
+        <h2>📸 Carica Foto o Video nel Feed</h2>
+        <p class="form-help-text">I file appariranno subito nel diario di Mais in ordine cronologico.</p>
+
+        <form method="post" enctype="multipart/form-data" class="k-admin-form">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_post">
+
+          <div class="form-group">
+            <label for="id_tag">Categoria / Momento:</label>
+            {{ post_form.tag }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_title">Titolo o Momento (opzionale):</label>
+            {{ post_form.title }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_caption">Didascalia / Racconto:</label>
+            {{ post_form.caption }}
+          </div>
+
+          <div class="upload-dual-grid">
+            <div class="upload-dropzone">
+              <span class="upload-icon">📷</span>
+              <label for="id_image"><strong>Foto</strong></label>
+              {{ post_form.image }}
+              <span class="file-hint">JPG, PNG, WEBP</span>
+            </div>
+
+            <div class="upload-dropzone">
+              <span class="upload-icon">🎬</span>
+              <label for="id_video"><strong>Video</strong></label>
+              {{ post_form.video }}
+              <span class="file-hint">MP4, MOV, WEBM</span>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-submit-post">
+            🚀 Pubblica nel Diario
+          </button>
+        </form>
+      </section>
+
+      <!-- POSTS LIST -->
+      <section class="card" style="margin-top: 24px;">
+        <h2>📝 Post Pubblicati nel Feed ({{ posts.count }})</h2>
+
+        {% if posts %}
+          <div class="admin-posts-list">
+            {% for post in posts %}
+            <div class="admin-post-item">
+              <div class="admin-post-media">
+                {% if post.video %}
+                  <video src="{{ post.video.url }}" class="thumb-media" muted preload="metadata"></video>
+                  <span class="media-badge">▶ Video</span>
+                {% elif post.image %}
+                  <img src="{{ post.image.url }}" alt="Thumb" class="thumb-media">
+                  <span class="media-badge">📷 Foto</span>
+                {% else %}
+                  <div class="thumb-media text-only">📄 Testo</div>
+                {% endif %}
+              </div>
+
+              <div class="admin-post-info">
+                <div class="admin-post-tags">
+                  <span class="post-tag-pill">{{ post.get_tag_display }}</span>
+                  <span class="post-date">{{ post.created_at|date:"d/m/Y H:i" }}</span>
+                  <span class="post-likes">❤️ {{ post.likes }}</span>
+                </div>
+                {% if post.title %}<h4 class="post-item-title">{{ post.title }}</h4>{% endif %}
+                {% if post.caption %}<p class="post-item-caption">{{ post.caption|truncatechars:100 }}</p>{% endif %}
+              </div>
+
+              <div class="admin-post-actions">
+                <form method="post" action="{% url 'kitten_delete_post' post.id %}" onsubmit="return confirm('Vuoi davvero eliminare questo post?');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn-delete-post" title="Elimina post">
+                    🗑️
+                  </button>
+                </form>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-hint">
+            <p>Nessun post caricato. Usa il modulo sopra per pubblicare il primo momento di Mais!</p>
+          </div>
+        {% endif %}
+      </section>
+
+      <!-- QR & FLYER QUICK CARD -->
+      <section class="card" style="margin-top: 24px;">
+        <h2>🖨️ Stampa Rapida Volantini con QR Code</h2>
+        <div class="qr-admin-box">
+          <img src="{% url 'kitten_qr' %}" alt="QR code" class="qr-preview-thumb">
+          <div>
+            <strong>QR Code Ufficiale</strong>
+            <p style="font-size: 13px; color: var(--dim, #888); margin: 4px 0 10px;">Punta a https://labustagialla.it/mais/</p>
+            <a href="{% url 'kitten_qr' %}" download="qr_mais.png" class="btn-panel-action" style="font-size: 12px; padding: 4px 10px;">
+              Scarica PNG
+            </a>
+          </div>
+        </div>
+
+        <div class="flyer-buttons-column" style="margin-top: 16px; display: flex; flex-direction: column; gap: 8px;">
+          <a href="{% url 'kitten_flyer_a4' %}" target="_blank" class="btn-panel-action" style="text-align: center; justify-content: center;">
+            📄 <strong>Apri Locandina A4</strong> (con 8 linguette staccabili)
+          </a>
+          <a href="{% url 'kitten_flyer_a5' %}" target="_blank" class="btn-panel-action" style="text-align: center; justify-content: center;">
+            📇 <strong>Apri Flyer A5</strong> (formato compatto per bacheche)
+          </a>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- RIGHT COLUMN: FULL SITE CONTENT EDITOR -->
+    <div class="admin-col-right">
+
+      <form method="post" enctype="multipart/form-data" class="k-admin-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update_profile">
+
+        <!-- 1. CONTATTI & STATO -->
+        <section class="card">
+          <h2>📞 1. Contatti & Stato Adozione</h2>
+          <p class="form-help-text">Il numero telefonico attiva i pulsanti di chiamata, chat WhatsApp e i tagliandi stampabili.</p>
+
+          <div class="form-group highlight-box">
+            <label for="id_phone_number"><strong>📱 Numero di Telefono / WhatsApp Principale:</strong></label>
+            {{ profile_form.phone_number }}
+            <span class="field-desc">Es. 340 1234567. Appare sui pulsanti del sito e sui volantini.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="id_whatsapp_number">WhatsApp dedicato (se diverso):</label>
+            {{ profile_form.whatsapp_number }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_contact_email">Email di contatto (opzionale):</label>
+            {{ profile_form.contact_email }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_location">Città / Zona di riferimento:</label>
+            {{ profile_form.location }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_whatsapp_message">Messaggio WhatsApp pre-compilato:</label>
+            {{ profile_form.whatsapp_message }}
+            <span class="field-desc">Testo che l'utente trova già scritto aprendo la chat.</span>
+          </div>
+
+          <div class="form-group" style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border);">
+            <label for="id_is_adopted" class="checkbox-label">
+              {{ profile_form.is_adopted }}
+              <strong>Gattina Adottata! 🎉 (Mostra annuncio di lieto fine)</strong>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label for="id_adopted_banner_text">Testo Banner di Adozione Avvenuta:</label>
+            {{ profile_form.adopted_banner_text }}
+          </div>
+        </section>
+
+        <!-- 2. INTESTAZIONE & HERO -->
+        <section class="card" style="margin-top: 20px;">
+          <h2>🏷️ 2. Intestazione & Scheda Rapida</h2>
+
+          <div class="form-group">
+            <label for="id_name">Nome del gattino:</label>
+            {{ profile_form.name }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_hero_title">Titolo Principale (Hero):</label>
+            {{ profile_form.hero_title }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_tagline">Sottotitolo Hero (Tagline):</label>
+            {{ profile_form.tagline }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_hero_badge">Badge di Stato (in alto a sinistra):</label>
+            {{ profile_form.hero_badge }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_hero_location_badge">Badge Luogo (in alto a destra):</label>
+            {{ profile_form.hero_location_badge }}
+          </div>
+
+          <div class="form-group">
+            <label><strong>I 4 Riquadri Specifiche Rapide:</strong></label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div>
+                <label style="font-size: 11px;">Sesso:</label>
+                {{ profile_form.spec_gender }}
+              </div>
+              <div>
+                <label style="font-size: 11px;">Età:</label>
+                {{ profile_form.spec_age }}
+              </div>
+              <div>
+                <label style="font-size: 11px;">Mantello:</label>
+                {{ profile_form.spec_color }}
+              </div>
+              <div>
+                <label style="font-size: 11px;">Luogo:</label>
+                {{ profile_form.spec_location }}
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 14px;">
+            <label for="id_cover_image">Foto di Copertina Principale:</label>
+            {{ profile_form.cover_image }}
+            {% if kitten.cover_image %}
+              <div class="current-cover-preview">
+                <span>Foto attiva:</span>
+                <img src="{{ kitten.cover_image.url }}" alt="Cover">
+              </div>
+            {% endif %}
+          </div>
+        </section>
+
+        <!-- 3. STORIA & PRESENTAZIONE -->
+        <section class="card" style="margin-top: 20px;">
+          <h2>📖 3. Storia & Presentazione</h2>
+
+          <div class="form-group">
+            <label for="id_story_title">Titolo Sezione Storia:</label>
+            {{ profile_form.story_title }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_bio_intro">Descrizione & Storia Completa:</label>
+            {{ profile_form.bio_intro }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_story_quote">Citazione in Evidenza (Box dorato):</label>
+            {{ profile_form.story_quote }}
+          </div>
+        </section>
+
+        <!-- 4. CARATTERE & SUPERPOTERI -->
+        <section class="card" style="margin-top: 20px;">
+          <h2>⚡ 4. Carattere & Punti Elenco</h2>
+
+          <div class="form-group">
+            <label for="id_personality_title">Titolo Sezione:</label>
+            {{ profile_form.personality_title }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_personality">Descrizione del Carattere:</label>
+            {{ profile_form.personality }}
+          </div>
+
+          <div class="form-group">
+            <label><strong>I 4 Punti Elenco dei "Superpoteri":</strong></label>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              {{ profile_form.bullet_1 }}
+              {{ profile_form.bullet_2 }}
+              {{ profile_form.bullet_3 }}
+              {{ profile_form.bullet_4 }}
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. STATO DI SALUTE & 4 TAPPE -->
+        <section class="card" style="margin-top: 20px;">
+          <h2>🩺 5. Stato di Salute & Tappe Veterinarie</h2>
+
+          <div class="form-group">
+            <label for="id_health_title">Titolo Sezione Salute:</label>
+            {{ profile_form.health_title }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_health_subtitle">Sottotitolo:</label>
+            {{ profile_form.health_subtitle }}
+          </div>
+
+          <!-- Tappa 1 -->
+          <div class="health-step-edit-box" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <strong>Tappa 1</strong>
+              <label class="checkbox-label" style="font-size: 12px;">
+                {{ profile_form.health_step1_done }} Completata ✓
+              </label>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin-bottom: 6px;">
+              {{ profile_form.health_step1_badge }}
+              {{ profile_form.health_step1_title }}
+            </div>
+            {{ profile_form.health_step1_desc }}
+          </div>
+
+          <!-- Tappa 2 -->
+          <div class="health-step-edit-box" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <strong>Tappa 2</strong>
+              <label class="checkbox-label" style="font-size: 12px;">
+                {{ profile_form.health_step2_done }} Completata ✓
+              </label>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin-bottom: 6px;">
+              {{ profile_form.health_step2_badge }}
+              {{ profile_form.health_step2_title }}
+            </div>
+            {{ profile_form.health_step2_desc }}
+          </div>
+
+          <!-- Tappa 3 -->
+          <div class="health-step-edit-box" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <strong>Tappa 3</strong>
+              <label class="checkbox-label" style="font-size: 12px;">
+                {{ profile_form.health_step3_done }} Completata ✓
+              </label>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin-bottom: 6px;">
+              {{ profile_form.health_step3_badge }}
+              {{ profile_form.health_step3_title }}
+            </div>
+            {{ profile_form.health_step3_desc }}
+          </div>
+
+          <!-- Tappa 4 -->
+          <div class="health-step-edit-box" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <strong>Tappa 4</strong>
+              <label class="checkbox-label" style="font-size: 12px;">
+                {{ profile_form.health_step4_done }} Completata ✓
+              </label>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin-bottom: 6px;">
+              {{ profile_form.health_step4_badge }}
+              {{ profile_form.health_step4_title }}
+            </div>
+            {{ profile_form.health_step4_desc }}
+          </div>
+        </section>
+
+        <!-- 6. DIARIO & FEED -->
+        <section class="card" style="margin-top: 20px;">
+          <h2>📸 6. Diario / Feed</h2>
+
+          <div class="form-group">
+            <label for="id_feed_title">Titolo Sezione Diario:</label>
+            {{ profile_form.feed_title }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_feed_subtitle">Sottotitolo Diario:</label>
+            {{ profile_form.feed_subtitle }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_feed_empty_title">Titolo quando non ci sono ancora post:</label>
+            {{ profile_form.feed_empty_title }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_feed_empty_desc">Descrizione quando non ci sono post:</label>
+            {{ profile_form.feed_empty_desc }}
+          </div>
+        </section>
+
+        <!-- 7. REQUISITI ADOZIONE & CALL TO ACTION -->
+        <section class="card" style="margin-top: 20px;">
+          <h2>🏡 7. Requisiti di Adozione & Call To Action</h2>
+
+          <div class="form-group">
+            <label for="id_adoption_badge">Badge Sezione:</label>
+            {{ profile_form.adoption_badge }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_adoption_title">Titolo Sezione Requisiti:</label>
+            {{ profile_form.adoption_title }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_adoption_intro">Frase Introduttiva:</label>
+            {{ profile_form.adoption_intro }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_adoption_requirements">Requisiti Dettagliati:</label>
+            {{ profile_form.adoption_requirements }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_adoption_cta_title">Titolo Box Finale d'Invito:</label>
+            {{ profile_form.adoption_cta_title }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_adoption_cta_desc">Descrizione Box Finale d'Invito:</label>
+            {{ profile_form.adoption_cta_desc }}
+          </div>
+        </section>
+
+        <!-- 8. TESTI DEI VOLANTINI STAMPABILI -->
+        <section class="card" style="margin-top: 20px;">
+          <h2>🖨️ 8. Testi dei Volantini (A4 e A5)</h2>
+
+          <div class="form-group">
+            <label for="id_flyer_header_badge">Badge in cima al Volantino:</label>
+            {{ profile_form.flyer_header_badge }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_flyer_title">Titolo Principale del Volantino:</label>
+            {{ profile_form.flyer_title }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_flyer_subtitle">Sottotitolo del Volantino:</label>
+            {{ profile_form.flyer_subtitle }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_flyer_cta_text">Titolo Callout QR Code:</label>
+            {{ profile_form.flyer_cta_text }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_flyer_cta_sub">Descrizione Callout QR Code:</label>
+            {{ profile_form.flyer_cta_sub }}
+          </div>
+
+          <div class="form-group">
+            <label for="id_flyer_contact_label">Etichetta Contatto Finale:</label>
+            {{ profile_form.flyer_contact_label }}
+          </div>
+        </section>
+
+        <!-- SUBMIT BUTTON -->
+        <div style="position: sticky; bottom: 20px; z-index: 10; margin-top: 24px;">
+          <button type="submit" class="btn-submit-profile" style="box-shadow: 0 8px 25px rgba(37, 99, 235, 0.5); font-size: 16px; padding: 14px;">
+            💾 SALVA TUTTE LE MODIFICHE DEL SITO
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+</main>
+{% endblock %}

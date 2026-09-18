@@ -1,0 +1,494 @@
+/* Flyer Styles for Screen Preview and Direct Paper Print */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body.flyer-body {
+  background: #2b2d35;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  color: #1a1a1a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 50px;
+}
+
+/* Print Toolbar (Screen Only) */
+.print-toolbar {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  background: #18181b;
+  border-bottom: 1px solid #3f3f46;
+  color: #f4f4f5;
+  z-index: 1000;
+  padding: 12px 24px;
+}
+
+.toolbar-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.toolbar-info strong {
+  display: block;
+  font-size: 15px;
+  color: #fbbf24;
+}
+
+.toolbar-info span {
+  font-size: 13px;
+  color: #a1a1aa;
+}
+
+.toolbar-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-print {
+  background: #f59e0b;
+  color: #000;
+  font-weight: 700;
+  font-size: 14px;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-print:hover {
+  background: #d97706;
+}
+
+.btn-back {
+  background: #3f3f46;
+  color: #fff;
+  text-decoration: none;
+  padding: 10px 16px;
+  font-size: 13px;
+  border-radius: 6px;
+}
+
+/* Printable Paper Sheet */
+.page {
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  margin-top: 30px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* A4 dimensions: 210mm x 297mm */
+.a4-page {
+  width: 210mm;
+  height: 297mm;
+  padding: 14mm 16mm 0mm;
+}
+
+/* A5 dimensions: 148mm x 210mm */
+.a5-page {
+  width: 148mm;
+  height: 210mm;
+  padding: 10mm 12mm;
+}
+
+/* HEADER */
+.flyer-header {
+  text-align: center;
+  border-bottom: 2px solid #f59e0b;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.header-badge {
+  display: inline-block;
+  background: #fef3c7;
+  color: #b45309;
+  font-size: 11pt;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 3px 14px;
+  border-radius: 20px;
+  margin-bottom: 6px;
+  border: 1px solid #fcd34d;
+}
+
+.flyer-title {
+  font-size: 24pt;
+  font-weight: 900;
+  color: #18181b;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.flyer-subtitle {
+  font-size: 12pt;
+  color: #4b5563;
+  margin-top: 4px;
+}
+
+/* MAIN BODY (A4) */
+.flyer-main {
+  display: grid;
+  grid-template-columns: 82mm 1fr;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.flyer-photo-box {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 3px solid #f59e0b;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.flyer-cat-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-caption-badge {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 10pt;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.flyer-info-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.name-ribbon {
+  margin-bottom: 10px;
+}
+
+.name-ribbon h2 {
+  font-size: 20pt;
+  font-weight: 900;
+  color: #111827;
+}
+
+.name-ribbon .highlight {
+  color: #d97706;
+}
+
+.name-ribbon .sub-name {
+  font-size: 10pt;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.flyer-points {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.flyer-points li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.bullet-icon {
+  font-size: 15pt;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.flyer-points strong {
+  display: block;
+  font-size: 11pt;
+  color: #111827;
+}
+
+.flyer-points span {
+  display: block;
+  font-size: 9.5pt;
+  color: #4b5563;
+  line-height: 1.3;
+}
+
+/* QR CODE BANNER */
+.flyer-qr-banner {
+  background: #fef3c7;
+  border: 2px dashed #f59e0b;
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 12px;
+}
+
+.qr-code-holder {
+  background: #fff;
+  padding: 6px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.qr-image {
+  width: 90px;
+  height: 90px;
+  display: block;
+}
+
+.qr-text-holder h3 {
+  font-size: 14pt;
+  font-weight: 900;
+  color: #92400e;
+  margin-bottom: 4px;
+}
+
+.qr-text-holder p {
+  font-size: 10pt;
+  color: #78350f;
+  margin-bottom: 6px;
+}
+
+.web-url-pill {
+  display: inline-block;
+  background: #fff;
+  color: #1f2937;
+  font-size: 11pt;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid #fcd34d;
+}
+
+/* CONTACT BAR */
+.flyer-contact-bar {
+  background: #111827;
+  color: #fff;
+  border-radius: 8px;
+  padding: 10px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.contact-label {
+  font-size: 11pt;
+  color: #d1d5db;
+}
+
+.contact-number {
+  font-size: 13pt;
+  color: #fbbf24;
+}
+
+/* TEAR-OFF TABS SECTION (BOTTOM) */
+.tear-cut-line {
+  border-top: 1.5px dashed #6b7280;
+  text-align: center;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.cut-scissors {
+  font-size: 8.5pt;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tear-tabs-container {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  height: 52mm;
+  border-top: 1.5px dashed #4b5563;
+  margin-top: 4px;
+}
+
+.tear-tab {
+  border-right: 1.5px dashed #9ca3af;
+  padding: 6px 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tear-tab:last-child {
+  border-right: none;
+}
+
+.tab-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  text-align: center;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.tab-title {
+  font-size: 8.5pt;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: 0.5px;
+}
+
+.tab-sub {
+  font-size: 7.5pt;
+  color: #6b7280;
+}
+
+.tab-phone {
+  font-size: 9pt;
+  font-weight: 800;
+  color: #b45309;
+}
+
+.tab-qr {
+  width: 24mm;
+  height: 24mm;
+  writing-mode: horizontal-tb;
+  transform: rotate(180deg);
+  margin-top: 2px;
+}
+
+/* A5 COMPACT STYLING */
+.a5-page .flyer-title {
+  font-size: 18pt;
+}
+
+.a5-page .flyer-subtitle {
+  font-size: 9pt;
+}
+
+.a5-grid {
+  display: grid;
+  grid-template-columns: 55mm 1fr;
+  gap: 12px;
+  margin: 10px 0;
+  align-items: center;
+}
+
+.flyer-photo-box.compact {
+  border-width: 2px;
+}
+
+.a5-badge-specs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.a5-badge-specs span {
+  font-size: 8.5pt;
+  font-weight: 700;
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.flyer-points.compact {
+  gap: 6px;
+}
+
+.flyer-points.compact li {
+  font-size: 8.5pt;
+  line-height: 1.3;
+}
+
+.flyer-qr-banner.compact {
+  padding: 8px 10px;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.qr-code-holder.compact .qr-image {
+  width: 60px;
+  height: 60px;
+}
+
+.flyer-qr-banner.compact h3 {
+  font-size: 10pt;
+}
+
+.web-url-pill.small {
+  font-size: 9pt;
+  padding: 2px 8px;
+}
+
+.a5-footer-contact {
+  background: #111827;
+  color: #fff;
+  border-radius: 6px;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+}
+
+.a5-footer-contact .contact-label {
+  font-size: 9pt;
+}
+
+.a5-footer-contact .contact-number {
+  font-size: 10pt;
+}
+
+/* PRINT MEDIA QUERY (REAL PAPER / SAVE AS PDF) */
+@media print {
+  body.flyer-body {
+    background: transparent;
+    padding: 0;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .page {
+    margin: 0 !important;
+    box-shadow: none !important;
+    page-break-after: always;
+  }
+  .a4-page {
+    width: 210mm;
+    height: 297mm;
+  }
+  .a5-page {
+    width: 148mm;
+    height: 210mm;
+  }
+  /* Force browsers to print background colors & borders */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+}

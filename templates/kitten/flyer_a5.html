@@ -1,0 +1,83 @@
+{% load static %}<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flyer A5 Adozione — {{ kitten.name }} 🐾</title>
+<link rel="stylesheet" href="{% static 'css/flyer.css' %}">
+</head>
+<body class="flyer-body a5-body">
+
+<!-- Print Controls (Hidden on paper) -->
+<aside class="print-toolbar no-print">
+  <div class="toolbar-inner">
+    <div class="toolbar-info">
+      <strong>📇 Anteprima Stampa Flyer A5</strong>
+      <span>Formato compatto cartolina / bacheca. Premi il tasto qui a fianco per stampare o salvare in PDF.</span>
+    </div>
+    <div class="toolbar-actions">
+      <button onclick="window.print()" class="btn-print">
+        🖨️ Stampa / Salva PDF
+      </button>
+      <a href="{% url 'kitten_detail' %}" class="btn-back">
+        Torna al sito
+      </a>
+    </div>
+  </div>
+</aside>
+
+<!-- The Printable A5 Sheet -->
+<div class="page a5-page">
+
+  <header class="flyer-header compact">
+    <div class="header-badge">{{ kitten.flyer_header_badge|default:"❤️ ADOZIONE DEL CUORE ❤️" }}</div>
+    <h1 class="flyer-title">{{ kitten.flyer_title|default:"Adotta MAIS! 🐾" }}</h1>
+    <p class="flyer-subtitle">{{ kitten.flyer_subtitle|default:kitten.tagline }}</p>
+  </header>
+
+  <div class="a5-grid">
+    <div class="a5-photo-col">
+      <div class="flyer-photo-box compact">
+        <img src="{{ kitten.cover_url }}" alt="Foto di {{ kitten.name }}" class="flyer-cat-img">
+      </div>
+      <div class="a5-badge-specs">
+        <span>{{ kitten.spec_gender|default:kitten.gender }}</span>
+        <span>{{ kitten.spec_age|default:kitten.age_text }}</span>
+        <span>{{ kitten.spec_color|default:kitten.color }}</span>
+      </div>
+    </div>
+
+    <div class="a5-info-col">
+      <ul class="flyer-points compact">
+        {% if kitten.bullet_1 %}<li><strong>⚡</strong> {{ kitten.bullet_1 }}</li>{% endif %}
+        {% if kitten.bullet_2 %}<li><strong>🐟</strong> {{ kitten.bullet_2 }}</li>{% endif %}
+        {% if kitten.bullet_3 %}<li><strong>🚽</strong> {{ kitten.bullet_3 }}</li>{% endif %}
+        <li><strong>🩺</strong> {{ kitten.health_step1_title }}: {{ kitten.health_step1_desc|truncatechars:60 }}</li>
+        <li><strong>📍 Dove:</strong> {{ kitten.location }}</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="flyer-qr-banner compact">
+    <div class="qr-code-holder compact">
+      <img src="{% url 'kitten_qr' %}" alt="QR code per i video di Mais" class="qr-image">
+    </div>
+    <div class="qr-text-holder">
+      <h3>{{ kitten.flyer_cta_text|default:"📲 Inquadra per vedere i video mentre gioca!" }}</h3>
+      <div class="web-url-pill small">
+        🌐 <strong>labustagialla.it/mais/</strong>
+      </div>
+    </div>
+  </div>
+
+  <footer class="a5-footer-contact">
+    <span class="contact-label">{{ kitten.flyer_contact_label|default:"Per informazioni e adozione:" }}</span>
+    <span class="contact-number">
+      📞 WhatsApp / Tel: <strong>{{ kitten.phone_number|default:"Contatta tramite labustagialla.it/mais/" }}</strong>
+    </span>
+  </footer>
+
+</div>
+
+</body>
+</html>

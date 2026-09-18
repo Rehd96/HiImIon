@@ -28,7 +28,10 @@ def _staff_only(view):
 
 
 def panel_login(request):
+    next_url = request.POST.get('next') or request.GET.get('next')
     if request.user.is_authenticated and request.user.is_staff:
+        if next_url and next_url.startswith('/') and not next_url.startswith('//'):
+            return redirect(next_url)
         return redirect('panel_dashboard')
 
     if request.method == 'POST':
@@ -39,14 +42,21 @@ def panel_login(request):
         )
         if user and user.is_staff:
             login(request, user)
+            if next_url and next_url.startswith('/') and not next_url.startswith('//'):
+                return redirect(next_url)
             return redirect('panel_dashboard')
         messages.error(request, 'Wrong username or password.')
 
-    return render(request, 'panel/login.html')
+    return render(request, 'panel/login.html', {'next': next_url})
 
 
 def panel_logout(request):
     logout(request)
+    next_url = request.POST.get('next') or request.GET.get('next') or request.META.get('HTTP_REFERER')
+    if next_url and ('mais' in next_url or 'kitten' in next_url):
+        return redirect('kitten_detail')
+    if next_url and next_url.startswith('/') and not next_url.startswith('//'):
+        return redirect(next_url)
     return redirect('home')
 
 

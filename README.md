@@ -8,7 +8,8 @@ access-logging pattern comes from.
 - **`/`** — landing page, one card per project
 - **`/projects/<slug>/`** — a case study per project, with links to GitHub and the live instance
 - **`/about/`** — about page
-- **`/panel/`** — login-protected analytics: views, unique visitors, per-project breakdown, referrers, raw log
+- **`/mais/`** — adoption feed & blog for Mais (7-week kitten rescue in Pescara), with printable A4/A5 flyers, live purr/like counter and WhatsApp contact (see [`KITTEN_ADOPTION.md`](KITTEN_ADOPTION.md))
+- **`/panel/`** — login-protected analytics: views, unique visitors, per-project breakdown, referrers, raw log, and Mais media management
 
 ## Local development
 
