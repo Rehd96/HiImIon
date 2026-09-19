@@ -103,7 +103,7 @@ class KittenProfile(models.Model):
     )
     bullet_2 = models.CharField(
         max_length=250,
-        default='Buongustaia: mangia con grande gioia la sua pappa umida 🐟',
+        default='Buongustaia: mangia con grande gioia la sua pappa umida, sopratutto al salmone',
         blank=True
     )
     bullet_3 = models.CharField(
@@ -138,7 +138,7 @@ class KittenProfile(models.Model):
     health_step1_badge = models.CharField(max_length=50, default='Fatto ✓', blank=True)
     health_step1_title = models.CharField(max_length=150, default='Prima Visita Veterinaria', blank=True)
     health_step1_desc = models.TextField(
-        default='Visita generale superata a pieni voti: vispa, reattiva e in ottima salute generale.',
+        default='Vispa, reattiva e in salute',
         blank=True
     )
     health_step1_done = models.BooleanField(default=True)
@@ -289,6 +289,10 @@ class KittenProfile(models.Model):
         if self.cover_image:
             return self.cover_image.url
         return '/static/img/mais_placeholder.jpg'
+
+    @property
+    def secondary_photo_url(self):
+        return '/static/img/mais_scaffale.jpg'
 
 
 class KittenPost(models.Model):

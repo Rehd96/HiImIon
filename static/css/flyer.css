@@ -94,7 +94,7 @@ body.flyer-body {
 .a4-page {
   width: 210mm;
   height: 297mm;
-  padding: 14mm 16mm 0mm;
+  padding: 12mm 16mm 0mm;
 }
 
 /* A5 dimensions: 148mm x 210mm */
@@ -143,9 +143,25 @@ body.flyer-body {
 .flyer-main {
   display: grid;
   grid-template-columns: 82mm 1fr;
-  gap: 14px;
-  align-items: center;
+  gap: 16px;
+  align-items: start;
   margin-bottom: 12px;
+}
+
+.photos-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.photo-card {
+  position: relative;
+  width: 82mm;
+  height: 62mm;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 3px solid #f59e0b;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
 .flyer-photo-box {
@@ -167,14 +183,14 @@ body.flyer-body {
 
 .photo-caption-badge {
   position: absolute;
-  bottom: 8px;
-  left: 8px;
+  bottom: 6px;
+  left: 6px;
   background: rgba(0, 0, 0, 0.75);
   color: #fff;
-  font-size: 10pt;
+  font-size: 8.5pt;
   font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 20px;
+  padding: 2px 8px;
+  border-radius: 14px;
 }
 
 .flyer-info-box {
@@ -206,7 +222,7 @@ body.flyer-body {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 9px;
 }
 
 .flyer-points li {
@@ -216,7 +232,7 @@ body.flyer-body {
 }
 
 .bullet-icon {
-  font-size: 15pt;
+  font-size: 14pt;
   line-height: 1;
   flex-shrink: 0;
   margin-top: 1px;
@@ -224,7 +240,7 @@ body.flyer-body {
 
 .flyer-points strong {
   display: block;
-  font-size: 11pt;
+  font-size: 10.5pt;
   color: #111827;
 }
 
@@ -243,8 +259,8 @@ body.flyer-body {
   padding: 10px 14px;
   display: flex;
   align-items: center;
-  gap: 18px;
-  margin-bottom: 12px;
+  gap: 16px;
+  margin-bottom: 10px;
 }
 
 .qr-code-holder {
@@ -289,11 +305,11 @@ body.flyer-body {
   background: #111827;
   color: #fff;
   border-radius: 8px;
-  padding: 10px 16px;
+  padding: 9px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .contact-label {
@@ -308,7 +324,7 @@ body.flyer-body {
 
 /* TEAR-OFF TABS SECTION (BOTTOM) */
 .tear-cut-line {
-  border-top: 1.5px dashed #6b7280;
+  border-top: 2px dashed #6b7280;
   text-align: center;
   margin-top: auto;
   padding-top: 4px;
@@ -316,29 +332,44 @@ body.flyer-body {
 
 .cut-scissors {
   font-size: 8.5pt;
-  color: #6b7280;
+  font-weight: 700;
+  color: #4b5563;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .tear-tabs-container {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  height: 52mm;
-  border-top: 1.5px dashed #4b5563;
+  grid-template-columns: repeat(5, 1fr);
+  height: 54mm;
+  border-top: 2px dashed #4b5563;
   margin-top: 4px;
 }
 
 .tear-tab {
-  border-right: 1.5px dashed #9ca3af;
-  padding: 6px 2px;
+  border-right: 2px dashed #6b7280;
+  padding: 5px 3px 3px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  position: relative;
+  box-sizing: border-box;
 }
 
 .tear-tab:last-child {
   border-right: none;
+}
+
+.tab-cut-scissor {
+  position: absolute;
+  top: -10px;
+  right: -5px;
+  font-size: 8pt;
+  color: #6b7280;
+  background: #fff;
+  padding: 0 1px;
+  line-height: 1;
 }
 
 .tab-content {
@@ -346,36 +377,43 @@ body.flyer-body {
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
   height: 100%;
   text-align: center;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
+  box-sizing: border-box;
 }
 
 .tab-title {
-  font-size: 8.5pt;
-  font-weight: 800;
+  font-size: 8pt;
+  font-weight: 900;
   color: #111827;
-  letter-spacing: 0.5px;
-}
-
-.tab-sub {
-  font-size: 7.5pt;
-  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  line-height: 1.1;
 }
 
 .tab-phone {
   font-size: 9pt;
   font-weight: 800;
   color: #b45309;
+  line-height: 1.15;
 }
 
 .tab-qr {
   width: 24mm;
   height: 24mm;
-  writing-mode: horizontal-tb;
-  transform: rotate(180deg);
-  margin-top: 2px;
+  display: block;
+  margin: 1mm auto;
+  border-radius: 4px;
+}
+
+.tab-cta {
+  font-size: 6.5pt;
+  font-weight: 700;
+  color: #4b5563;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  line-height: 1;
 }
 
 /* A5 COMPACT STYLING */

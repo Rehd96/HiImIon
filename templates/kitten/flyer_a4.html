@@ -13,7 +13,7 @@
   <div class="toolbar-inner">
     <div class="toolbar-info">
       <strong>📄 Anteprima Stampa Locandina A4</strong>
-      <span>Formato A4 con 8 tagliandini a strappo. Premi il tasto qui a fianco per stampare o salvare come PDF.</span>
+      <span>Formato A4 con 5 tagliandini a strappo. Premi il tasto qui a fianco per stampare o salvare come PDF.</span>
     </div>
     <div class="toolbar-actions">
       <button onclick="window.print()" class="btn-print">
@@ -36,19 +36,27 @@
     <p class="flyer-subtitle">{{ kitten.flyer_subtitle|default:kitten.tagline }}</p>
   </header>
 
-  <!-- Main Hero Body (Photo + Specs) -->
+  <!-- Main Hero Body (2 Photos + Specs) -->
   <div class="flyer-main">
-    <div class="flyer-photo-box">
-      <img src="{{ kitten.cover_url }}" alt="Foto di {{ kitten.name }}" class="flyer-cat-img">
-      <div class="photo-caption-badge">
-        <span>🐾 {{ kitten.name }} · {{ kitten.age_text }}</span>
+    <div class="photos-column">
+      <div class="photo-card">
+        <img src="{{ kitten.cover_url }}" alt="Foto di {{ kitten.name }} in primo piano" class="flyer-cat-img">
+        <div class="photo-caption-badge">
+          <span>🐾 {{ kitten.name }} · {{ kitten.age_text }}</span>
+        </div>
+      </div>
+      <div class="photo-card">
+        <img src="{% static 'img/mais_scaffale.jpg' %}" alt="Foto di {{ kitten.name }} curiosa nello scaffale" class="flyer-cat-img">
+        <div class="photo-caption-badge">
+          <span>🐾 Curiosa & Affettuosa</span>
+        </div>
       </div>
     </div>
 
     <div class="flyer-info-box">
       <div class="name-ribbon">
         <h2>Mi chiamo <span class="highlight">{{ kitten.name|upper }}</span>!</h2>
-        <span class="sub-name">(mice ➔ topo ➔ Mais 🌽)</span>
+        <span class="sub-name">(mice(tto) ➔ mice/topo ➔ Mais 🌽)</span>
       </div>
 
       <ul class="flyer-points">
@@ -87,14 +95,14 @@
           <span class="bullet-icon">🩺</span>
           <div>
             <strong>{{ kitten.health_step1_title }}</strong>
-            <span>{{ kitten.health_step1_desc|truncatechars:80 }}</span>
+            <span>{{ kitten.health_step1_desc|default:"Vispa, reattiva e in salute" }}</span>
           </div>
         </li>
         <li>
           <span class="bullet-icon">📍</span>
           <div>
             <strong>{{ kitten.location }}</strong>
-            <span>Disponibile per adozione responsabile nelle vicinanze</span>
+            <span>Disponibile per adozione responsabile</span>
           </div>
         </li>
       </ul>
@@ -128,15 +136,16 @@
     <span class="cut-scissors">✂ Taglia lungo le linee tratteggiate qui sotto per i tagliandi da staccare ✂</span>
   </div>
 
-  <!-- 8 Tear-off Tabs at Bottom -->
+  <!-- 5 Tear-off Tabs at Bottom -->
   <div class="tear-tabs-container">
-    {% for i in "12345678" %}
+    {% for i in "12345" %}
     <div class="tear-tab">
+      <span class="tab-cut-scissor" aria-hidden="true">✂</span>
       <div class="tab-content">
         <span class="tab-title">🐾 Adotta {{ kitten.name|upper }}!</span>
-        <span class="tab-sub">{{ kitten.location|truncatechars:20 }}</span>
-        <span class="tab-phone">📞 {{ kitten.phone_number|default:"labustagialla.it" }}</span>
-        <img src="{% url 'kitten_qr' %}" alt="QR" class="tab-qr">
+        <span class="tab-phone">📞 {{ kitten.phone_number|default:kitten.whatsapp_number|default:"labustagialla.it" }}</span>
+        <img src="{% url 'kitten_qr' %}" alt="QR code per adottare {{ kitten.name }}" class="tab-qr">
+        <span class="tab-cta">{% if kitten.phone_number %}🌐 labustagialla.it{% else %}📲 Scansiona o Chiama{% endif %}</span>
       </div>
     </div>
     {% endfor %}
