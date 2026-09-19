@@ -5,4 +5,5 @@ staticfiles/
 media/
 __pycache__/
 *.py[cod]
+*.pdf
 .DS_Store

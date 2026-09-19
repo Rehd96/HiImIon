@@ -40,15 +40,15 @@
   <div class="flyer-main">
     <div class="photos-column">
       <div class="photo-card">
-        <img src="{{ kitten.cover_url }}" alt="Foto di {{ kitten.name }} in primo piano" class="flyer-cat-img">
-        <div class="photo-caption-badge">
-          <span>🐾 {{ kitten.name }} · {{ kitten.age_text }}</span>
-        </div>
-      </div>
-      <div class="photo-card">
         <img src="{% static 'img/mais_scaffale.jpg' %}" alt="Foto di {{ kitten.name }} curiosa nello scaffale" class="flyer-cat-img">
         <div class="photo-caption-badge">
           <span>🐾 Curiosa & Affettuosa</span>
+        </div>
+      </div>
+      <div class="photo-card">
+        <img src="{% static 'img/mais_in_braccio.jpg' %}" alt="Foto di {{ kitten.name }} in braccio" class="flyer-cat-img photo-in-braccio">
+        <div class="photo-caption-badge">
+          <span>🐾 {{ kitten.name }} · {{ kitten.age_text }}</span>
         </div>
       </div>
     </div>
@@ -127,7 +127,7 @@
   <div class="flyer-contact-bar">
     <span class="contact-label">{{ kitten.flyer_contact_label|default:"Per informazioni e per conoscerla:" }}</span>
     <span class="contact-number">
-      📞 WhatsApp / Tel: <strong>{{ kitten.phone_number|default:"Contatta tramite il sito" }}</strong>
+      📞 WhatsApp / Tel: <strong>{{ kitten.phone_number|default:"351 692 80 50" }}</strong>
     </span>
   </div>
 
@@ -143,9 +143,9 @@
       <span class="tab-cut-scissor" aria-hidden="true">✂</span>
       <div class="tab-content">
         <span class="tab-title">🐾 Adotta {{ kitten.name|upper }}!</span>
-        <span class="tab-phone">📞 {{ kitten.phone_number|default:kitten.whatsapp_number|default:"labustagialla.it" }}</span>
+        <span class="tab-phone">📞 {{ kitten.phone_number|default:kitten.whatsapp_number|default:"351 692 80 50" }}</span>
         <img src="{% url 'kitten_qr' %}" alt="QR code per adottare {{ kitten.name }}" class="tab-qr">
-        <span class="tab-cta">{% if kitten.phone_number %}🌐 labustagialla.it{% else %}📲 Scansiona o Chiama{% endif %}</span>
+        <span class="tab-cta">🌐 LABUSTAGIALLA.IT/MAIS</span>
       </div>
     </div>
     {% endfor %}

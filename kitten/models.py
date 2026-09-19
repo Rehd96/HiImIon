@@ -108,7 +108,7 @@ class KittenProfile(models.Model):
     )
     bullet_3 = models.CharField(
         max_length=250,
-        default='Educatissima: usa già la lettiera in modo impeccabile 🚽',
+        default='Educatissima: usa già la lettiera in modo impeccabile',
         blank=True
     )
     bullet_4 = models.CharField(

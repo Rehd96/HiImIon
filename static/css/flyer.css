@@ -94,7 +94,8 @@ body.flyer-body {
 .a4-page {
   width: 210mm;
   height: 297mm;
-  padding: 12mm 16mm 0mm;
+  padding: 9mm 14mm 6mm;
+  box-sizing: border-box;
 }
 
 /* A5 dimensions: 148mm x 210mm */
@@ -179,6 +180,10 @@ body.flyer-body {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.photo-in-braccio {
+  object-position: center 25%;
 }
 
 .photo-caption-badge {
@@ -327,28 +332,31 @@ body.flyer-body {
   border-top: 2px dashed #6b7280;
   text-align: center;
   margin-top: auto;
-  padding-top: 4px;
+  padding-top: 6px;
+  padding-bottom: 2px;
 }
 
 .cut-scissors {
-  font-size: 8.5pt;
+  display: block;
+  font-size: 8pt;
   font-weight: 700;
   color: #4b5563;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  line-height: 1.2;
 }
 
 .tear-tabs-container {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  height: 54mm;
+  height: 51mm;
   border-top: 2px dashed #4b5563;
   margin-top: 4px;
 }
 
 .tear-tab {
   border-right: 2px dashed #6b7280;
-  padding: 5px 3px 3px;
+  padding: 4px 2px 2px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -390,30 +398,33 @@ body.flyer-body {
   text-transform: uppercase;
   letter-spacing: 0.2px;
   line-height: 1.1;
+  white-space: nowrap;
 }
 
 .tab-phone {
-  font-size: 9pt;
+  font-size: 8.5pt;
   font-weight: 800;
   color: #b45309;
   line-height: 1.15;
+  white-space: nowrap;
 }
 
 .tab-qr {
-  width: 24mm;
-  height: 24mm;
+  width: 22mm;
+  height: 22mm;
   display: block;
   margin: 1mm auto;
   border-radius: 4px;
 }
 
 .tab-cta {
-  font-size: 6.5pt;
+  font-size: 6pt;
   font-weight: 700;
   color: #4b5563;
   text-transform: uppercase;
   letter-spacing: 0.2px;
-  line-height: 1;
+  line-height: 1.1;
+  white-space: nowrap;
 }
 
 /* A5 COMPACT STYLING */
