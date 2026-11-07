@@ -53,8 +53,6 @@ def panel_login(request):
 def panel_logout(request):
     logout(request)
     next_url = request.POST.get('next') or request.GET.get('next') or request.META.get('HTTP_REFERER')
-    if next_url and ('mais' in next_url or 'kitten' in next_url):
-        return redirect('kitten_detail')
     if next_url and next_url.startswith('/') and not next_url.startswith('//'):
         return redirect(next_url)
     return redirect('home')
