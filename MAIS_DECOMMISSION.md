@@ -71,3 +71,25 @@ I controlli su `https://labustagialla.it` hanno confermato lo spegnimento degli 
 | `https://labustagialla.it/healthz` | 200 OK | **200** | ✅ Attivo |
 | `https://labustagialla.it/blog/` | 200 OK | **200** | ✅ Attivo |
 | `https://labustagialla.it/ezbk/` | 200 OK | **200** | ✅ Attivo |
+
+---
+
+## 5. Audit di Sicurezza degli Endpoint e Protezione Informazioni
+
+È stata condotta una scansione completa di probing sugli endpoint per scongiurare qualsiasi fuga di file di configurazione, repository, database o file istruzioni per agenti/AI (`AGENTS.md` e simili):
+
+| Categoria | Percorso Verificato | Codice HTTP | Note di Sicurezza |
+| :--- | :--- | :--- | :--- |
+| **Agent / AI Files** | `/AGENTS.md`, `/agents.md`, `/.agents/` | **404** | Non instradati, nessun file servito dal server web |
+| **Git & Version Control** | `/.git/`, `/.git/config`, `/.git/HEAD` | **404** | Repository `.git` non accessibile |
+| **Ambiente & Segreti** | `/.env`, `/.env.example`, `/.env.prod` | **404** | Variabili d'ambiente e chiavi protette |
+| **Database & Backup** | `/db.sqlite3`, `/backup.sql`, `*.tar.gz` | **404** | File di database e backup inaccessibili via web |
+| **Note & Docs Deploy** | `/DEPLOY.md`, `/VPS_COMMANDS.txt`, `/README.md` | **404** | File operativi e istruzioni non esposti |
+| **Sorgenti Python** | `/manage.py`, `/requirements.txt`, `/hiimion/settings.py` | **404** | Nessun file sorgente o configurazione servito |
+| **Pannello Django Admin** | `/django-admin/`, `/blog/django-admin/` | **403** | Bloccato a livello Nginx (`allow 127.0.0.1; deny all;`) |
+| **Pannello Analytics** | `/panel/`, `/panel/views/` | **302** | Reindirizzamento a login obbligatorio (`/panel/login/`) |
+| **Directory Traversal** | `/static/../.env`, `/static/%2e%2e/AGENTS.md` | **404** | Protezione attiva da WhiteNoise / Django |
+| **Security Headers** | `X-Frame-Options`, `X-Content-Type-Options` | Presenti | Clickjacking e MIME sniffing bloccati |
+| **Server Token** | `Server` header | **nginx** | Versione OS / Nginx mascherata (`server_tokens off;`) |
+| **Rate Limiting** | Zone `wb_global` e `wb_auth` | **Attivo** | Protezione attiva contro brute-force e scraping (429) |
+
