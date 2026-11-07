@@ -2,12 +2,11 @@
 
 ## Project Structure & Module Organization
 
-This is a Django 5.1 portfolio site with a private analytics panel and a kitten-adoption feature. Project configuration and root URLs live in `hiimion/`. The two Django apps are:
+This is a Django 5.1 portfolio site with a private analytics panel. Project configuration and root URLs live in `hiimion/`. The Django app is:
 
 - `portfolio/`: public portfolio pages, project data in `projects.py`, analytics middleware/models, panel views, and the `prune_views` management command.
-- `kitten/`: adoption pages, profile/post models, forms, and printable flyers.
 
-HTML is grouped by responsibility in `templates/site/`, `templates/panel/`, and `templates/kitten/`. Keep CSS and image assets under `static/css/` and `static/img/`; committed migrations belong in each app’s `migrations/` directory. Deployment material is in `deploy/`, with operational notes in `DEPLOY.md` and `VPS_COMMANDS.txt`.
+HTML is grouped by responsibility in `templates/site/` and `templates/panel/`. Keep CSS and image assets under `static/css/` and `static/img/`; committed migrations belong in each app’s `migrations/` directory. Deployment material is in `deploy/`, with operational notes in `DEPLOY.md` and `VPS_COMMANDS.txt`.
 
 ## Build, Test, and Development Commands
 
@@ -30,7 +29,7 @@ Portfolio content is data, not database state: add or edit projects in `portfoli
 
 ## Testing Guidelines
 
-Tests use Django's `TestCase` and live beside their app in `portfolio/tests.py` or `kitten/tests.py`. Name test methods `test_<behavior>` and cover normal, authorization, and failure paths. Add tests for new routes, model behavior, and analytics exclusions. Run the full suite before opening a PR; there is no separate coverage threshold configured.
+Tests use Django's `TestCase` and live beside their app in `portfolio/tests.py`. Name test methods `test_<behavior>` and cover normal, authorization, and failure paths. Add tests for new routes, model behavior, and analytics exclusions. Run the full suite before opening a PR; there is no separate coverage threshold configured.
 
 ## Commit & Pull Request Guidelines
 
